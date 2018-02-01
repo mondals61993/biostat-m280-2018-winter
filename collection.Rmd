@@ -1,0 +1,44 @@
+---
+Title: Simulation 
+Author: 'Sangeeta Mondal'
+Date: 02/02/2018
+---
+```{r}
+library(knitr)
+folder<-"/home/mondals/biostat-m280-2018-winter/"
+file_list<-list.files(path = folder, pattern = "n\\d\\d\\d.*.txt")
+datalist<-lapply(file_list, function(x) read.table(paste0(folder,x), fill = TRUE))
+```
+
+```{r}
+#get t1 
+t1s<-datalist[c(seq(2,14, by = 3))]
+#get t5
+t5s<-datalist[c(seq(3,15, by = 3))]
+#get gaussians
+gauss<-datalist[c(seq(1,13, by = 3))]
+
+reform<-function(inp){
+  z<-lapply(inp, function(x) unname(x))
+  z2<-lapply(z, function(x) t(x))
+  new<-c()
+  for (i in z2){
+    new<-rbind(new,i)
+  }
+  return (new)
+}
+
+fin1<-c()
+for (i in list(t1s,t5s, gauss)){
+  fin1<-cbind(fin1,reform(i))
+}
+colnames(fin1)<-c("t1", "t5","Gaussian")
+```
+
+```{r}
+n<-c(100,"",200,"",300,"",400,"",500,"")  
+method<-rep(c("primeAvg", "sampAvg"),5)
+
+fin_df<-cbind(n,method,fin1)
+kable(fin_df)
+```
