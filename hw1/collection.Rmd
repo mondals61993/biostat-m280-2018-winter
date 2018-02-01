@@ -1,7 +1,7 @@
 ---
-Title: Simulation 
-Author: 'Sangeeta Mondal'
+Author: Sangeeta Mondal
 Date: 02/02/2018
+Title: Simulation
 ---
 ```{r}
 library(knitr)
