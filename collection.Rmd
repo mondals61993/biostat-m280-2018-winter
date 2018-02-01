@@ -4,7 +4,7 @@ Author: 'Sangeeta Mondal'
 Date: 02/02/2018
 ---
 ```{r}
-library(knitr)
+library(knitr);library(rmarkdown)
 folder<-"/home/mondals/biostat-m280-2018-winter/"
 file_list<-list.files(path = folder, pattern = "n\\d\\d\\d.*.txt")
 datalist<-lapply(file_list, function(x) read.table(paste0(folder,x), fill = TRUE))
