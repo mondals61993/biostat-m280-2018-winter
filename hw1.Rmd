@@ -42,12 +42,22 @@ There are 894 SNPs located within the MAP4 gene.
 ### 4. Statistical geneticists often have to reformat a data set to feed into various analysis programs. For example, to use the Mendel software http://www.genetics.ucla.edu/software/mendel, we have to reformat the data set to be read by Mendel.
 #### a. Write a Linux shell command to convert merge-geno.bim to Mendel SNP definition file.
 
-```{bash}
+```{bash message = FALSE, warning = FALSE}
 awk '{OFS = ","} {print $1, $2, $3}' /home/m280-data/hw1/merge-geno.bim | head -20 #head was added  so that entire dataset does not print
 ```
 
 #### b. Write a Linux shell command to convert merge-geno.fam to Mendel pedigree file. Since twin status is not available in plink format, we put nothing for that field. Also Mendel limits Person ID to have length less than or equal to 8 characters, so we have to strip the string T2DG from the IDs.
 ```{bash}
+#strip T2DG from the IDs 
+cp /home/m280-data/hw1/merge-geno.fam g_fam
+sed -i 's/T2DG//' g_fam 
+sed -i 's/T2DG//' g_fam
+sed -i 's/T2DG//' g_fam
+```
 
+```{bash message = FALSE, warning = FALSE}
+awk '{OFS = ","; if ($3 == "0"){$3 = "";} if ($4 == "0"){$4 = "";}if ($6 == "0"){$6 = "";}if ($5 == "1"){$5 ="M";}else if ($5 == "2"){$5 ="F";} else {$5 = "0";} print;}' g_fam > g_fam.pedf
+
+head -20 g_fam.pedf
 ```
 
