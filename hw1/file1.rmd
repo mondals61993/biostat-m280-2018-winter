@@ -1,4 +1,0 @@
-
-```{r}
-This is an Rmd file.
-```
