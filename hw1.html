@@ -127,15 +127,39 @@ $(document).ready(function () {
 <div id="how-many-persons-are-in-the-data-set-statisticians-call-this-n-how-many-snps-are-in-the-data-set-statisticians-call-this-p" class="section level3">
 <h3>1. How many persons are in the data set (statisticians call this n)? How many SNPs are in the data set (statisticians call this p)?</h3>
 <pre class="bash"><code>awk 'END {print NR}' /home/m280-data/hw1/merge-geno.fam </code></pre>
+<pre><code>## 959</code></pre>
 <p>There are 959 people in this data set.</p>
 <pre class="bash"><code>awk 'END {print NR}' /home/m280-data/hw1/merge-geno.bim</code></pre>
+<pre><code>## 8348674</code></pre>
 <p>There are 8348674 unique SNPs in this dataset.</p>
 </div>
 <div id="which-chromosomes-does-this-data-set-contain-how-many-snps-are-in-each-chromosome" class="section level3">
 <h3>2. Which chromosomes does this data set contain? How many SNPs are in each chromosome?</h3>
 <pre class="bash"><code>cut -f1 /home/m280-data/hw1/merge-geno.bim | sort | uniq </code></pre>
+<pre><code>## 1
+## 11
+## 13
+## 15
+## 17
+## 19
+## 21
+## 3
+## 5
+## 7
+## 9</code></pre>
 <p>There are 11 unique chromosomes in this dataset. The chromosomes represented in the dataset are: 1, 11, 13, 15, 17, 19, 21, 3, 5, 7, and 9.</p>
 <pre class="bash"><code>cut -f1 /home/m280-data/hw1/merge-geno.bim | sort | uniq -c</code></pre>
+<pre><code>## 1309299 1
+##  815860 11
+##  602809 13
+##  491208 15
+##  477990 17
+##  393615 19
+##  239352 21
+## 1215399 3
+## 1090185 5
+##  980944 7
+##  732013 9</code></pre>
 <p>Chromosome 1 has 1309299 SNPs; Chromosome 11 has 815860 SNPs; Chromosome 13 has 602809 SNPs; Chromosome 15 has 491208 SNPs; Chromosome 17 has 477990; Chromosome 19 has 393615 chromsomes; Chromosome 21 has 239352 SNPs; Chromosome 3 has 1215399 SNPs; Chromosome 5 has 1090185 SNPs; Chromosome 7 has 980944 SNPs; Chromosome 9 has 732013 SNPs.</p>
 </div>
 <div id="map4-microtubule-associated-protein-4-is-a-gene-on-chromosome-3-spanning-positions-47892180-bp---48130769-bp.-how-many-snps-are-located-within-map4-gene" class="section level3">
@@ -173,7 +197,27 @@ $(document).ready(function () {
 </div>
 <div id="b.-write-a-linux-shell-command-to-convert-merge-geno.fam-to-mendel-pedigree-file.-since-twin-status-is-not-available-in-plink-format-we-put-nothing-for-that-field.-also-mendel-limits-person-id-to-have-length-less-than-or-equal-to-8-characters-so-we-have-to-strip-the-string-t2dg-from-the-ids." class="section level4">
 <h4>b. Write a Linux shell command to convert merge-geno.fam to Mendel pedigree file. Since twin status is not available in plink format, we put nothing for that field. Also Mendel limits Person ID to have length less than or equal to 8 characters, so we have to strip the string T2DG from the IDs.</h4>
-<pre class="bash"><code></code></pre>
+<pre class="bash"><code>cp /home/m280-data/hw1/merge-geno.fam g_fam
+
+#strip string
+sed -i 's/T2DG//' g_fam
+sed -i 's/T2DG//' g_fam
+sed -i 's/T2DG//' g_fam</code></pre>
+<pre class="bash"><code>#3rd and 4th column-&gt;0; last column of 0 into missing values; covert last column of sex M F to g_fam.pedf
+
+awk '{OFS = &quot;,&quot;; if ($3 == &quot;0&quot;) {$3 = &quot;&quot;;} if ($4 == &quot;0&quot;) {$4 = &quot;&quot;l} if ($6 == &quot;0&quot;){$6 = &quot;&quot;;} if ($5 == &quot;1&quot;) {$5 = &quot;M&quot;;} else if ($5 == &quot;2&quot;) {$5 = &quot;0&quot;;} print;}' g_fam &gt; g_fam.pedf
+
+head -10 g_fam.pedf</code></pre>
+<pre><code>## 2,0200001,,,M,
+## 2,0200002,,,0,
+## 2,0200003,,,0,
+## 2,0200004,,,0,
+## 2,0200005,,,M,
+## 2,0200006,,,M,
+## 2,0200007,,,0,
+## 2,0200008,,,0,
+## 2,0200009,,,0,
+## 2,0200012,,,M,</code></pre>
 </div>
 </div>
 
