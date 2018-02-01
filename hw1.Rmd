@@ -1,18 +1,18 @@
 ---
-  title: "M280-- HW 1"
+title: "M280-- HW 1"
 author: "Sangeeta Mondal"
 output: html_document
 ---
   
 ### 1.	How many persons are in the data set (statisticians call this n)? How many SNPs are in the data set (statisticians call this p)?
   
-```{bash eval = FALSE}
+```{bash}
 awk 'END {print NR}' /home/m280-data/hw1/merge-geno.fam 
 ```
 
 There are 959 people in this data set. 
 
-```{bash eval = FALSE}
+```{bash}
 awk 'END {print NR}' /home/m280-data/hw1/merge-geno.bim
 ```
 
@@ -20,13 +20,13 @@ There are 8348674 unique SNPs in this dataset.
 
 ### 2. Which chromosomes does this data set contain? How many SNPs are in each chromosome?
 
-```{bash eval = FALSE}
+```{bash}
 cut -f1 /home/m280-data/hw1/merge-geno.bim | sort | uniq 
 ```
 
 There are 11 unique chromosomes in this dataset. The chromosomes represented in the dataset are: 1, 11, 13, 15, 17, 19, 21, 3, 5, 7, and 9. 
 
-```{bash eval = FALSE}
+```{bash}
 cut -f1 /home/m280-data/hw1/merge-geno.bim | sort | uniq -c
 ```
 Chromosome 1 has 1309299 SNPs; Chromosome 11 has 815860 SNPs; Chromosome 13 has 602809 SNPs; Chromosome 15 has 491208 SNPs; Chromosome 17 has 477990; Chromosome 19 has 393615 chromsomes; Chromosome 21 has 239352 SNPs; Chromosome 3 has 1215399 SNPs; Chromosome 5 has 1090185 SNPs; Chromosome 7 has 980944 SNPs; Chromosome 9 has 732013 SNPs. 
