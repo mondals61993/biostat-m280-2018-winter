@@ -1,0 +1,53 @@
+---
+  title: "M280-- HW 1"
+author: "Sangeeta Mondal"
+output: html_document
+---
+  
+### 1.	How many persons are in the data set (statisticians call this n)? How many SNPs are in the data set (statisticians call this p)?
+  
+```{bash eval = FALSE}
+awk 'END {print NR}' /home/m280-data/hw1/merge-geno.fam 
+```
+
+There are 959 people in this data set. 
+
+```{bash eval = FALSE}
+awk 'END {print NR}' /home/m280-data/hw1/merge-geno.bim
+```
+
+There are 8348674 unique SNPs in this dataset. 
+
+### 2. Which chromosomes does this data set contain? How many SNPs are in each chromosome?
+
+```{bash eval = FALSE}
+cut -f1 /home/m280-data/hw1/merge-geno.bim | sort | uniq 
+```
+
+There are 11 unique chromosomes in this dataset. The chromosomes represented in the dataset are: 1, 11, 13, 15, 17, 19, 21, 3, 5, 7, and 9. 
+
+```{bash eval = FALSE}
+cut -f1 /home/m280-data/hw1/merge-geno.bim | sort | uniq -c
+```
+Chromosome 1 has 1309299 SNPs; Chromosome 11 has 815860 SNPs; Chromosome 13 has 602809 SNPs; Chromosome 15 has 491208 SNPs; Chromosome 17 has 477990; Chromosome 19 has 393615 chromsomes; Chromosome 21 has 239352 SNPs; Chromosome 3 has 1215399 SNPs; Chromosome 5 has 1090185 SNPs; Chromosome 7 has 980944 SNPs; Chromosome 9 has 732013 SNPs. 
+
+### 3. MAP4 (microtubule-associated protein 4) is a gene on chromosome 3 spanning positions 47,892,180 bp - 48,130,769 bp. How many SNPs are located within MAP4 gene?
+
+```{bash}
+awk '{if ($1 == 3 && $4 >= 47892180 && $4 <= 48130769) print}' /home/m280-data/hw1/merge-geno.bim | wc -l
+```
+
+There are 894 SNPs located within the MAP4 gene. 
+
+### 4. Statistical geneticists often have to reformat a data set to feed into various analysis programs. For example, to use the Mendel software http://www.genetics.ucla.edu/software/mendel, we have to reformat the data set to be read by Mendel.
+#### a. Write a Linux shell command to convert merge-geno.bim to Mendel SNP definition file.
+
+```{bash}
+awk '{OFS = ","} {print $1, $2, $3}' /home/m280-data/hw1/merge-geno.bim | head -20 #head was added  so that entire dataset does not print
+```
+
+#### b. Write a Linux shell command to convert merge-geno.fam to Mendel pedigree file. Since twin status is not available in plink format, we put nothing for that field. Also Mendel limits Person ID to have length less than or equal to 8 characters, so we have to strip the string T2DG from the IDs.
+```{bash}
+
+```
+
