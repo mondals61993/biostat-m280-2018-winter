@@ -1,0 +1,155 @@
+```{r}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+data("diamonds")
+```
+
+###1 
+
+#### 7.3.4
+
+#### 1. Explore the distribution of each of the x, y, and z variables in diamonds. What do you learn? Think about a diamond and how you might decide which dimension is the length, width, and depth.
+
+```{r}
+summary(diamonds$x)
+
+ggplot(data = diamonds)+
+  geom_density(mapping = aes(x = x), binwidth = .1)+
+  coord_cartesian(xlim = c(0,10))
+  
+```
+
+Most of the values are clustered between 3 and 9. However, there are some extreme values as well (0 and 10.74 based on summary statistics). Furthermore, the values tend to form clusters around 4.5, 5.5, 6.5 7.5, and 8.5. However, it still looks bimodal. 
+
+```{r warning = FALSE, message = FALSE}
+summary(diamonds$y)
+ggplot(data = diamonds)+
+  geom_density(mapping = aes(x = y), binwidth = .5)+
+  coord_cartesian(xlim = c(0,60))
+```
+
+Again there is a wide range of values for this variable ranging from 0 and to 59. However, most of the values are clustered between 0 and 10. Values are commonly clustered at 2, 5.5, 6.5, 7.5, and 8.5-- but it still is bimodal. The clusters are similar to those of X, but the spread is much larger.  There are 2 outliers at about 32 and 29. 
+
+```{r}
+summary(diamonds$z)
+
+ggplot(data = diamonds)+
+  geom_density(mapping = aes(x = z), binwidth = .1)+
+  coord_cartesian(xlim= c(0,35))
+```
+The range of values for this variable is from 0 to 32 (somewhat similar to range of Y). However, the range of values is more constricted as it roughly spans from 2.5 to 5. There also seems to be clusters of data. 32 is an outlier. 
+
+According to the documentation, x is length, y is width, and z is depth. Based on the data itself that would have been difficult to figure it out. 
+
+#### 2. Explore the distribution of price. Do you discover anything unusual or surprising? (Hint: Carefully think about the binwidth and make sure you try a wide range of values.)
+
+```{r}
+summary(diamonds$price)
+
+ggplot(diamonds)+
+  geom_histogram(mapping = aes(x = price), binwidth = 100)
+
+lt25k<-diamonds[which(diamonds$price<2500),]
+ggplot(lt25k)+
+  geom_histogram(mapping = aes(x = price), binwidth = 10)
+```
+
+Based on the histogram, there is a sudden dip in the number of diamonds being sold for $1500. The price distribution is very right skewed. 
+
+#### 3. How many diamonds are 0.99 carat? How many are 1 carat? What do you think is the cause of the difference?
+
+```{r}
+diamonds_rev<-diamonds %>% filter(carat == .99| carat == 1) %>% count(carat)
+diamonds_rev
+
+diamonds_price<-diamonds %>% select(carat, price) %>% filter(carat == .99) %>% summarize(mean(price))
+diamonds_price
+
+price2<-diamonds %>% select(carat, price) %>% filter(carat == 1) %>% summarize(mean(price))
+price2
+```
+
+There are 1558 diamonds that are 1 carat and 23 diamonds that are .99 carat. 
+
+This might be an issue with supply and demand. More people might want 1 carat diamonds as compared to .99 carat diamond. We can not only see this with by the high number of 1 carat diamonds and low number of .99 carat diamonds, but also because 1 carat diamonds have much higher mean prices as compared to .99 carat diamond mean prices. 
+
+#### 4. Compare and contrast coord_cartesian() vs xlim() or ylim() when zooming in on a histogram. What happens if you leave binwidth unset? What happens if you try and zoom so only half a bar shows? <br>
+
+Going back to the first example.
+
+```{r}
+ggplot(data = diamonds)+
+  geom_histogram(mapping = aes(x = x))+
+  coord_cartesian(xlim = c(0,11), ylim = c(0,2500))
+
+ggplot(data = diamonds)+
+  geom_histogram(mapping = aes(x = x))+
+  xlim(c(3,9))+ylim(c(0,1000))
+
+```
+
+There are two main differences:
+* Coord_cartesian will simply zoom in on the graph given the limits listed. Xlim and ylim will drop all outliers outside of the given range and then plot the graph within the specific range. 
+* Coord_cartesian does not need a specified range to plot over. Ranges need to be specified for xlim and ylim or otherwise it will throw an error message such as 'no applicable method for 'limits''. 
+
+####  7.4.1
+
+#### 1. What happens to missing values in a histogram? What happens to missing values in a bar chart? Why is there a difference?
+
+```{r}
+#let's generate missing values
+mis_price<-diamonds %>% mutate(price_NA = ifelse(price < 915 | price > 5324, NA, price))
+
+ggplot(mis_price,aes(x= price_NA))+
+  geom_histogram()
+
+ggplot(mis_price, aes(x= price_NA))+
+  geom_bar()
+
+#make price categorical
+mis_price<-mis_price %>% mutate(price_cat = ifelse(price_NA <=  2628, 'not expensive', 'expensive'))
+ggplot(mis_price)+
+  geom_bar(mapping = aes(x= price_cat))
+
+```
+
+For histograms, a numeric value needs to be recognized to be placed into a bin; since their is no numeric value associated with NA, they are simply dropped from the histogram. In a bar plot, they simply get recognized as another category. 
+
+#### 2. What does na.rm = TRUE do in mean() and sum()?
+
+```{r}
+#generate a simple vector
+x<-c(1,2,3,NA)
+
+mean(x)
+mean(x, na.rm = TRUE)
+
+sum(x)
+sum(x, na.rm = TRUE)
+```
+
+Na.rm basically calculates the mean and sum after omitting the missing values. 
+
+#### 7.5.1.1
+
+#### 1. Use what you’ve learned to improve the visualisation of the departure times of cancelled vs. non-cancelled flights.
+
+Using a boxplot might be a better idea rather than a freqplot. 
+
+```{r}
+nycflights13::flights %>% 
+  mutate(
+    cancelled = is.na(dep_time),
+    sched_hour = sched_dep_time %/% 100,
+    sched_min = sched_dep_time %% 100,
+    sched_dep_time = sched_hour + sched_min / 60
+  ) %>% 
+  ggplot(mapping = aes(x = cancelled, y = sched_dep_time)) + 
+  geom_boxplot()
+```
+
+#### 2. What variable in the diamonds dataset is most important for predicting the price of a diamond? How is that variable correlated with cut? Why does the combination of those two relationships lead to lower quality diamonds being more expensive? 
+```{r}
+
+````
