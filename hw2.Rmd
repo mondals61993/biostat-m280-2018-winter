@@ -7,6 +7,7 @@ library(lvplot)
 library(ggbeeswarm)
 library(data.table)
 library(nycflights13)
+library(gridExtra)
 
 data('diamonds')
 data('mpg')
@@ -159,9 +160,60 @@ nycflights13::flights %>%
 ```
 
 #### 2. What variable in the diamonds dataset is most important for predicting the price of a diamond? How is that variable correlated with cut? Why does the combination of those two relationships lead to lower quality diamonds being more expensive? 
+
+This is a very complicated question that can't just be answered solely through exploratory data analysis graphs. I will attempt to answer though. 
+
 ```{r}
+#continuous variables-- carat, depth, table, x (length), y (width), z (depth)
+d_car<-ggplot(data = diamonds)+
+  geom_jitter(mapping = aes(x = carat, y = price), alpha = 1/100)
+
+d_dep<-ggplot(data = diamonds)+
+  geom_jitter(mapping = aes(x = depth, y = price), alpha = 1/100)+
+  coord_cartesian(c(50,70))
+
+d_tab<-ggplot(data = diamonds)+
+  geom_jitter(mapping = aes(x = table, y = price), alpha = 1/100)
+
+d_x<-ggplot(data = diamonds)+
+  geom_jitter(mapping = aes(x = x, y = price), alpha = 1/100)
+
+
+d_y<-ggplot(data = diamonds)+
+  geom_jitter(mapping = aes(x = y, y = price), alpha = 1/100)+
+  coord_cartesian(c(0,10))
+
+
+d_z<-ggplot(data = diamonds)+
+  geom_jitter(mapping = aes(x = z, y = price), alpha = 1/100)+
+  coord_cartesian(c(0,40))
+
+cont_graphs<-grid.arrange(d_car, d_dep, d_tab, d_x, d_y, d_z, nrow = 3)
+cont_graphs
 
 ```
+
+There are strong relationships (resembling quadratic) between price and length as well as price and width. 
+
+```{r}
+#categorical variables-- cut, color
+d_cut<-ggplot(data = diamonds)+
+  geom_boxplot(mapping = aes(x = cut, y = price))
+
+d_color<-ggplot(data = diamonds)+
+          geom_boxplot(mapping = aes(x = color, y = price))
+
+grid.arrange(d_cut, d_color, nrow = 1)
+
+```
+
+There seems to be more of a relationship between color and price, although there is quite a bit of variance. 
+```{r}
+#cut and length 
+
+#cut and width
+```
+
 
 #### 3. Install the ggstance package, and create a horizontal boxplot. How does this compare to using coord_flip()?
 
@@ -289,20 +341,51 @@ ggplot(data = diamonds, mapping = aes(x = price,
   geom_freqpoly()
 
 ggplot(data = diamonds, mapping = aes(x = price, 
-                                      colour = cut_number(carat, 10))) + 
+                                      colour = cut_number(carat, 20))) + 
   geom_freqpoly()
 ```
 
 When specifiying cut width, you are specifying restricted intervals that may or may not have any items in them especially when they are right skewed. Since the carat distribution is right skewed, bins for higher values will not have as many diamonds in them. 
 
+The interval lengths when cut number is specified are different as there is a fixed number of diamonds allotted to each interval. Furthermore, the density and count plots will be the same when cut number is specified.
 
-#### 2. 
+#### 2. Visualize the distribution of carat, partitioned by price.
 
-#### 3. 
+```{r}
+ggplot(diamonds, aes(x = cut_number(price, 10), y = carat)) +
+  geom_boxplot()+
+  coord_flip()
+```
 
-#### 4. 
+#### 3. How does the price distribution of very large diamonds compare to small diamonds. Is it as you expect, or does it surprise you?
 
-#### 5. 
+Very large diamonds (>3 carats) all cost more than approximately $6300. They are the most expensive diamonds. This does not surprise me. The distribution of diamond prices for larger diamonds are variable as well with things such cut and clarity playing a role in influencing price.
+
+#### 4. Combine two of the techniques you’ve learned to visualise the combined distribution of cut, carat, and price.
+
+```{r}
+ggplot(diamonds, aes(x = cut_number(carat, 5), y = price, color = cut)) +
+  geom_boxplot() + 
+  xlab('Weight of Diamond')
+```
+
+```{r}
+ggplot(data = diamonds, 
+       mapping = aes(x = carat, y = price)) +
+  geom_point()+
+  facet_grid(cut~.)+ 
+  theme_minimal()
+```
+
+#### 5. Two dimensional plots reveal outliers that are not visible in one dimensional plots. For example, some points in the plot below have an unusual combination of x and y values, which makes the points outliers even though their x and y values appear normal when examined separately. Why is a scatterplot a better display than a binned plot for this case?
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = x, y = y)) +
+  coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
+```
+
+In the graph shown above, there is a strong linear x and y relationship with lone point outliers. A binned plot would not show us these outliers as it is highlights outliers based on frequency. 
 
 ### Redo HW1 Q2 using tidyverse.
 
@@ -313,6 +396,7 @@ gen_snp<-fread(file = '/home/m280-data/hw1/merge-geno.bim', header = F)
 gen_fam<-fread(file = '/home/m280-data/hw1/merge-geno.fam', header = F)
 
 ```
+
 ```{r}
 colnames(gen_snp)<-c('Chromosome', 'SNP_ID', 'Genetic_Distance', 
                      'BP', 'Allele_1', 'Allele_2')
@@ -345,7 +429,7 @@ map4<-as.numeric(map4)
 cat('There are', map4, 'SNPs located within MAP4.')
 ```
 
-#### 4. Statistical geneticists often have to reformat a data set to feed into various analysis programs. <br>
+#### 4. Statistical geneticists often have to reformat a data set to feed into various analysis programs. 
 
 #### a. Mendel’s SNP definition file is similar to the plink bim file but has format SNP ID, Chromosome, Base Pair Position with each field separated by a comma. Write a Linux shell command to convert merge-geno.bim to Mendel SNP definition file.
 
