@@ -193,27 +193,36 @@ cont_graphs
 
 ```
 
-There are strong relationships (resembling quadratic) between price and length as well as price and width. 
+There are strong relationships (resembling quadratic) between price and length as well as price and width and price and carat. 
 
 ```{r}
-#categorical variables-- cut, color
+#categorical variables-- cut, color, clarity
 d_cut<-ggplot(data = diamonds)+
-  geom_boxplot(mapping = aes(x = cut, y = price))
+  geom_boxplot(mapping = aes(x = cut, y = price))+
+  coord_flip()
 
 d_color<-ggplot(data = diamonds)+
-          geom_boxplot(mapping = aes(x = color, y = price))
+          geom_boxplot(mapping = aes(x = color, y = price))+
+          coord_flip()
 
-grid.arrange(d_cut, d_color, nrow = 1)
+d_clarity<-ggplot(data = diamonds)+
+          geom_boxplot(mapping = aes(x = clarity, y = price))+
+          coord_flip()
+
+grid.arrange(d_cut, d_color, d_clarity, nrow = 1)
 
 ```
 
-There seems to be more of a relationship between color and price, although there is quite a bit of variance. 
+There seems to be more of a relationship between color and price, although there is quite a bit of variance. Worse diamond color seems to have higher diamond prices.  
+
 ```{r}
-#cut and length 
+#cut, carat, price 
+ggplot(data = diamonds)+
+  geom_boxplot(mapping = aes(x = cut, y = carat))
 
-#cut and width
 ```
 
+We see that higher quality diamonds (those with better cuts) have lower weights and diamonds with lower weight diamonds tend to cost less based on prior graphs. Hence, this could be a potential reason for lower costs for higher quality diamonds. 
 
 #### 3. Install the ggstance package, and create a horizontal boxplot. How does this compare to using coord_flip()?
 
@@ -433,4 +442,10 @@ cat('There are', map4, 'SNPs located within MAP4.')
 
 #### a. Mendel’s SNP definition file is similar to the plink bim file but has format SNP ID, Chromosome, Base Pair Position with each field separated by a comma. Write a Linux shell command to convert merge-geno.bim to Mendel SNP definition file.
 
+```{r}
+```
+
 #### b. Mendel’s pedigree file is similar to the plink fam file but has format Family ID, Person ID, Father ID, Mother ID, Sex coded as M or F, Twin Status with each field separated by a comma. Write a Linux shell command to convert merge-geno.fam to Mendel pedigree file. Since twin status is not available in plink format, we put nothing for that field. Also Mendel limits Person ID to have length less than or equal to 8 characters, so we have to strip the string T2DG from the IDs. 
+
+```{r}
+```
