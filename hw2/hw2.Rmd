@@ -1,5 +1,12 @@
+---
+Author: Sangeeta Mondal
+Date: 02/16/2018
+Title: HW 2
+---
+
 ```{r message = FALSE, warning = FALSE}
 library(ggplot2)
+library(readr)
 library(dplyr)
 library(knitr)
 library(ggstance)
@@ -8,6 +15,8 @@ library(ggbeeswarm)
 library(data.table)
 library(nycflights13)
 library(gridExtra)
+library(viridis)
+library(viridisLite)
 
 data('diamonds')
 data('mpg')
