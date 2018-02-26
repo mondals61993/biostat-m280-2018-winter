@@ -67,8 +67,8 @@
 
 -   [Rule 5](https://google.github.io/styleguide/Rguide.xml#spacing): Place spaces around all binary operators (`=`, `+`, `-`, `<-`, etc.). Exception: Spaces around `=`'s are optional when passing parameters in a function call. (-2 pts)
 
--   Some violations: code chunks for Q3 \#1, 2, 3, and 4.
-    -   Need spaces around `<-`.
+    -   Some violations: code chunks for Q3 \#1, 2, 3, and 4.
+        -   Need spaces around `<-`.
 -   [Rule 5](https://google.github.io/styleguide/Rguide.xml#spacing): Do not place a space before a comma, but always place one after a comma.
 
 -   [Rule 5](https://google.github.io/styleguide/Rguide.xml#spacing): Place a space before left parenthesis, except in a function call. Do not place spaces around code in parentheses or square brackets. Exception: Always place a space after a comma.
