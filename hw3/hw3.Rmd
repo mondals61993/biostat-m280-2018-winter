@@ -1,0 +1,12 @@
+```{r}
+library(readr)
+library(dplyr)
+```
+
+```{r}
+payroll<-read_csv('/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', col_names = TRUE)
+```
+
+```{r}
+payroll_p<-payroll %>% select(Year, `Total Payments`, `Base Pay`, `Overtime Pay`, `Other Pay & Adjustments`)
+```
