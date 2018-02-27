@@ -1,12 +1,54 @@
-```{r}
-library(readr)
+---
+title: "Homework 3"
+author: "Sangeeta Mondal"
+date: "2/27/2018"
+output: html_document
+---
+```{r warning = FALSE, message = FALSE}
+library(ggplot2)
 library(dplyr)
+library(readr)
+library(shiny)
+library(DBI)
+library(RSQLite)
 ```
 
-```{r}
-payroll<-read_csv('/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', col_names = TRUE)
-```
+##4 Visualize any other information you are interested in.
+
+### 1. How many tickets are in this data set? Which time period do these tickets span? Which years have most data?
+
+How many tickets are in this data set?
 
 ```{r}
-payroll_p<-payroll %>% select(Year, `Total Payments`, `Base Pay`, `Overtime Pay`, `Other Pay & Adjustments`)
+con <- dbConnect(RSQLite:: SQLite(), '/home/m280-data/la_parking/LA_Parking_Citations.sqlite')
+dbListTables(con)
+
+tick<- dplyr::tbl(con, "latix")
+```
+
+
+```{r}
+numtick<-tick %>% 
+  select(Ticket_number) %>%
+  summarize(num_t = n_distinct(Ticket_number)) %>%
+  collect()
+
+numtick
+```
+
+Which time periods to these tickets span?
+```{r}
+timep<- tick %>% 
+  select(Issue_DateTime) %>%
+  summarize(min = min(Issue_DateTime, na.rm = TRUE), 
+            max = max(Issue_DateTime, na.rm = TRUE)) %>%
+  mutate(conversion_min = as.Date(min),
+         conversion_max = as.Date(max)) %>%
+  collect()
+
+timep
+```
+
+Which years have most data?
+```{r}
 ```

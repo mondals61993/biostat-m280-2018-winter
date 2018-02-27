@@ -1,7 +1,11 @@
-library(readr)
+library(ggplot2)
 library(dplyr)
+library(readr)
 library(shiny)
-library(tidyverse)
+library(DBI)
+library(RSQLite)
+
+'''Question 1'''
 
 ''' #1 For efficiency of the Shiny app, you should first pre-process, 
 pare down, tidy, and save the data, e.g., as a compressed RDS file, to be used in the app.'''
@@ -231,3 +235,4 @@ ui4<-fluidPage(
 )
 
 shinyApp(server = server4, ui = ui4)
+
