@@ -1,5 +1,5 @@
 ---
-title: "Homework 3"
+title: "Homework 3-- Question 2"
 author: "Sangeeta Mondal"
 date: "2/27/2018"
 output: html_document
@@ -24,6 +24,14 @@ con <- dbConnect(RSQLite:: SQLite(), '/home/m280-data/la_parking/LA_Parking_Cita
 dbListTables(con)
 
 tick<- dplyr::tbl(con, "latix")
+
+```
+
+NOTE: I just kept a description of all the variables in the document using the below SQLite command. 
+
+```{r}
+res<-dbSendQuery(con, 'pragma table_info(latix)')
+dbFetch(res)
 ```
 
 
@@ -37,18 +45,172 @@ numtick
 ```
 
 Which time periods to these tickets span?
+
 ```{r}
-timep<- tick %>% 
+timep<- collect(tick) %>% 
   select(Issue_DateTime) %>%
   summarize(min = min(Issue_DateTime, na.rm = TRUE), 
             max = max(Issue_DateTime, na.rm = TRUE)) %>%
-  mutate(conversion_min = as.Date(min),
-         conversion_max = as.Date(max)) %>%
-  collect()
-
+  mutate(conversion_min = as.POSIXct(min, origin="1970-01-01", tz = 'PST'),
+         conversion_max = as.POSIXct(max, origin="1970-01-01", tz = 'PST')) 
+ 
 timep
+
 ```
 
 Which years have most data?
 ```{r}
+years<- dbSendQuery(con, 'Select (strftime("%Y",datetime(Issue_DateTime, "unixepoch", "localtime"))) as Year, 
+                    count(*) from latix 
+                    GROUP BY Year
+                    ORDER BY count(*) DESC')
+dbFetch(years)
+  
 ```
+2015 and 2016 have the most data. 
+
+
+### 2. When (which hour, weekday, month day, and month) are you most likely to get a ticket and when are you least likely to get a ticket?
+
+```{r}
+#hour
+hour<- dbSendQuery(con, 'Select (strftime("%H", datetime(Issue_DateTime, "unixepoch", "localtime"))) as Hour, 
+                        count(*) from latix
+                        GROUP BY Hour
+                        ORDER BY count(*) DESC')
+dbFetch(hour)
+```
+
+3, 5, and 1 PM are the most common times to get parking tickets. 
+
+```{r}
+#weekday
+wkday<- dbSendQuery(con, 'Select (strftime("%w", datetime(Issue_DateTime, "unixepoch", "localtime"))) as weekday, 
+                        count(*) from latix
+                        GROUP BY weekday
+                        ORDER BY count(*) DESC')
+dbFetch(wkday)
+```
+
+Tuesday and Thursday are the most common weekdays to get ticketed. 
+
+```{r}
+#monthday
+mnthd<- dbSendQuery(con, 'Select (strftime("%d", datetime(Issue_DateTime, "unixepoch", "localtime"))) as mnthd, 
+                        count(*) from latix
+                        GROUP BY mnthd
+                        ORDER BY count(*) DESC')
+dbFetch(mnthd)
+
+```
+
+
+The 22nd and the 8th are the most common month days to get ticketed. 
+
+```{r}
+#month
+
+mnth<-dbSendQuery(con, 'Select (strftime("%m", datetime(Issue_DateTime, "unixepoch", "localtime"))) as mnth, 
+                        count(*) from latix
+                        GROUP BY mnth
+                        ORDER BY count(*) DESC')
+dbFetch(mnth)
+```
+
+The most common months to get ticketed are March and August. 
+
+
+###3. Which car makes received most citations?
+```{r}
+m_cit<-tick %>%
+  select(Ticket_number, Make)%>%
+  group_by(Make)%>%
+  summarize(Most_Citations = n())%>%
+  arrange(desc(Most_Citations))%>%
+  collect()
+
+m_cit
+```
+
+Toyota and Honda received the most citations (but this might also be that higher proportions of people own Toyota and Honda!). 
+
+###4. How many different colors of cars were ticketed? Which color attracted most tickets?
+```{r}
+color_cit <-tick %>% 
+  select(Ticket_number, Color) %>%
+  group_by(Color) %>%
+  summarize(Most_Citations = n()) %>%
+  arrange(desc(Most_Citations))%>%
+  collect()
+
+color_cit
+```
+
+There 66 different colors of cars ticketed. Black and white colored cars attracted the most tickets (though as above, this might also be because higher proportions of people own black and white cars). 
+
+###5. What are the most common ticket types?
+
+```{r}
+viol_code<-tick %>% 
+  select(Ticket_number, Violation_code)%>%
+  group_by(Violation_code)%>%
+  summarize(Most = n()) %>%
+  arrange(desc(Most))%>%
+  collect()
+
+viol_code
+
+```
+
+
+```{r}
+viol_des<-tick %>%
+  select(Ticket_number, Violation_Description)%>%
+  group_by(Violation_Description)%>%
+  summarize(Most = n())%>%
+  arrange(desc(Most))%>%
+  collect()
+
+viol_des
+```
+
+The most common violation code is 80.69BS. The mot common violation description is NO PARK/STREET Clean. 
+
+###6. How much money was collected on parking tickets in 2015 and 2016?
+
+```{r}
+mon_p <- tick %>%
+  select(Ticket_number, Issue_DateTime, Fine_amount)%>%
+  collect() %>%
+  mutate(Convert =as.POSIXct(Issue_DateTime, origin="1970-01-01", tz = 'PST'),
+         Year = format(Convert, '%Y')) %>%
+  group_by(Year) %>%
+  summarize(Fine_Sum = sum(Fine_amount, na.rm = TRUE)) %>%
+  filter(Year %in% c(2015, 2016)) %>%
+  collect()
+
+mon_p
+
+```
+
+
+
+In 2015, $ 151,006,794 was collected on parking tickets. In 2016, $123,236,136 was. LA County is going to get rich off of parking citations!!!!!
+
+###7. Visualize any other information you are interested in.
+
+Do the number of citations change if we look at it by color of car and make?
+
+```{r}
+cmak<- tick %>%
+  select(Ticket_number, Color, Make)%>%
+  group_by(Color, Make)%>%
+  summarize(cits = n()) %>%
+  arrange(desc(cits))%>%
+  collect()
+
+cmak
+
+```
+
+Interestingly enough, Gray and White Toyotas have the most tickets. 
