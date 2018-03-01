@@ -67,6 +67,7 @@ years<- dbSendQuery(con, 'Select (strftime("%Y",datetime(Issue_DateTime, "unixep
 dbFetch(years)
   
 ```
+
 2015 and 2016 have the most data. 
 
 
