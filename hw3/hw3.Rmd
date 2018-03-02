@@ -13,13 +13,39 @@ library(DBI)
 library(RSQLite)
 ```
 
-##4 Visualize any other information you are interested in.
+## Q1 LA City Employee Payroll
+### 1. For efficiency of the Shiny app, you should first pre-process, pare down, tidy, and save the data, e.g., as a compressed RDS file, to be used in the app.
 
+```{r}
+setwd('/home/m280-data/la_payroll/')
+payroll <- read_csv('/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', col_names = TRUE)
+
+
+payroll_p <- payroll %>% select(Year, `Row ID`,`Department Title`, `Job Class Title`, 
+                                `Projected Annual Salary`, `Total Payments`, `Base Pay`, 
+                                `Overtime Pay`, `Other Pay (Payroll Explorer)`)
+names(payroll_p) <- c('Year', 'Row ID', 'Department_Title', 'Job_Class_Title' ,
+                      'Proj_An_Sal', 'Total_Pay', 'Base_Pay', 
+                      'Overtime_Pay', 'Other_Pay')
+
+payroll_p <-payroll_p %>% mutate('Total Pay ($)' = round(as.numeric(gsub('\\$|,', '', Total_Pay)),2),
+                                 'Base Pay ($)' =  round(as.numeric(gsub('\\$|,', '', Base_Pay)),2),
+                                 'Overtime Pay ($)' = round(as.numeric(gsub('\\$|,', '', Overtime_Pay)),2),
+                                 'Other Pay ($)' = round(as.numeric(gsub('\\$|,', '', Other_Pay)),2))
+saveRDS(payroll_p, '/home/mondals/biostat-m280-2018-winter/hw3/question1/payroll_p.rds', compress = TRUE)
+
+setwd('/home/mondals/biostat-m280-2018-winter/hw3/question1')
+```
+
+For the rest of the question, please refer to app.R!
+
+## Q2 LA City Parking War
 ### 1. How many tickets are in this data set? Which time period do these tickets span? Which years have most data?
 
 How many tickets are in this data set?
 
-```{r}
+```{r eval = FALSE}
+#connect to SQLite DB
 con <- dbConnect(RSQLite:: SQLite(), '/home/m280-data/la_parking/LA_Parking_Citations.sqlite')
 dbListTables(con)
 
@@ -29,7 +55,7 @@ tick<- dplyr::tbl(con, "latix")
 
 NOTE: I just kept a description of all the variables in the document using the below SQLite command. 
 
-```{r}
+```{r eval = FALSE}
 res<-dbSendQuery(con, 'pragma table_info(latix)')
 dbFetch(res)
 ```
@@ -44,6 +70,9 @@ numtick<-tick %>%
 numtick
 ```
 
+
+There are 404438 tickets.
+
 Which time periods to these tickets span?
 
 ```{r}
@@ -57,6 +86,8 @@ timep<- collect(tick) %>%
 timep
 
 ```
+
+Refer to the output above to see the specific datetime ranges. 
 
 Which years have most data?
 ```{r}
@@ -196,7 +227,7 @@ mon_p
 
 
 
-In 2015, $ 151,006,794 was collected on parking tickets. In 2016, $123,236,136 was. LA County is going to get rich off of parking citations!!!!!
+In 2015, 151,006,794 dollars was collected on parking tickets. In 2016, 123,236,136 dollars was collected. LA County is going to get rich off of parking citations!!!!!
 
 ###7. Visualize any other information you are interested in.
 
