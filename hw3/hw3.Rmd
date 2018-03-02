@@ -17,8 +17,10 @@ library(RSQLite)
 ### 1. For efficiency of the Shiny app, you should first pre-process, pare down, tidy, and save the data, e.g., as a compressed RDS file, to be used in the app.
 
 ```{r}
-setwd('/home/m280-data/la_payroll/')
-payroll <- read_csv('/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', col_names = TRUE)
+
+#setwd("~/biostat-m280-2018-winter/hw3/question1")
+
+payroll <- read_csv(file = '/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', col_names = TRUE)
 
 
 payroll_p <- payroll %>% select(Year, `Row ID`,`Department Title`, `Job Class Title`, 
@@ -33,8 +35,6 @@ payroll_p <-payroll_p %>% mutate('Total Pay ($)' = round(as.numeric(gsub('\\$|,'
                                  'Overtime Pay ($)' = round(as.numeric(gsub('\\$|,', '', Overtime_Pay)),2),
                                  'Other Pay ($)' = round(as.numeric(gsub('\\$|,', '', Other_Pay)),2))
 saveRDS(payroll_p, '/home/mondals/biostat-m280-2018-winter/hw3/question1/payroll_p.rds', compress = TRUE)
-
-setwd('/home/mondals/biostat-m280-2018-winter/hw3/question1')
 ```
 
 For the rest of the question, please refer to app.R!

@@ -14,9 +14,10 @@ library(rsconnect)
 ##### Question 1: For efficiency of the Shiny app, you should first pre-process, 
 ##### pare down, tidy, and save the data, e.g., as a compressed RDS file, to be used in the app.
 
+
 payroll_p <- readRDS('payroll_p.rds')
 
-payroll_p <- payroll_p[order(-payroll_p$Total_Pay), ]
+payroll_p <- payroll_p[order(-payroll_p$'Total Pay ($)'), ]
 
 ##### Question 2: Total payroll by LA City. Visualize the total LA City payroll of each year, 
 #####with breakdown into base pay, overtime pay, and other pay.
@@ -43,26 +44,27 @@ payroll_p <- payroll_p[order(-payroll_p$Total_Pay), ]
 
 #Datasets to be used in Question 4
 payroll_des <- payroll_p %>% select(Department_Title, 
-                                    Year, Total_Pay, 
-                                    Base_Pay, Overtime_Pay, 
-                                    Other_Pay) %>% 
-  group_by(Year, Department_Title) %>% summarize(Mean_Total = mean(Total_Pay),
-                                                 Median_Total = median(Total_Pay),
-                                                 Mean_Base = mean(Base_Pay), 
-                                                 Median_Base = median(Base_Pay),
-                                                 Mean_Overtime = mean(Overtime_Pay), 
-                                                 Median_Overtime = median(Overtime_Pay), 
-                                                 Mean_Other = mean(Other_Pay), 
-                                                 Median_Other = median(Other_Pay)) %>% 
-  gather(Descriptive, Value, -Year, -Department_Title) %>%
+                                    Year, `Total Pay ($)`, 
+                                    `Base Pay ($)`, `Overtime Pay ($)`, 
+                                    `Other Pay ($)`) %>% 
+  group_by(Year, Department_Title) %>% summarize(Mean_Total = mean(`Total Pay ($)`, na.rm = TRUE),
+                                                 Median_Total = median(`Total Pay ($)`, na.rm = TRUE),
+                                                 Mean_Base = mean(`Base Pay ($)`, na.rm = TRUE), 
+                                                 Median_Base = median(`Base Pay ($)`, na.rm = TRUE),
+                                                 Mean_Overtime = mean(`Overtime Pay ($)`, na.rm = TRUE), 
+                                                 Median_Overtime = median(`Overtime Pay ($)`, na.rm = TRUE), 
+                                                 Mean_Other = mean(`Other Pay ($)`, na.rm = TRUE), 
+                                                 Median_Other = median(`Other Pay ($)`, na.rm = TRUE)) %>% 
+  gather('Descriptive', 'Value ($)', -Year, -Department_Title) %>%
   arrange(Year, Department_Title)
 
-payroll_dmean <- payroll_des %>% filter(Descriptive %in% c('Mean_Total','Mean_Base', 'Mean_Overtime', 
+payroll_dmean <- payroll_des %>% filter(Descriptive %in% c('Mean_Total', 'Mean_Base', 
+                                                           'Mean_Overtime', 
                                                            'Mean_Other')) %>%
   arrange(Year, Department_Title)
-payroll_ddes <- payroll_des %>% filter(Descriptive %in% c('Median_Total','Median_Base', 'Median_Overtime', 
+payroll_ddes <- payroll_des %>% filter(Descriptive %in% c('Median_Total', 'Median_Base', 'Median_Overtime', 
                                                           'Median_Other')) %>%
-  bind_cols(payroll_dmean[,c('Descriptive', 'Value')]) %>%
+  bind_cols(payroll_dmean[,c('Descriptive', 'Value ($)')]) %>%
   mutate(Descriptive = recode(Descriptive, 
                               Median_Total = 'Median Total Salary', 
                               Median_Base = 'Median Base Salary', 
@@ -85,12 +87,12 @@ payroll_ddes <- payroll_des %>% filter(Descriptive %in% c('Median_Total','Median
 
 #Dataset to be used in question 5
 payroll_cost <- payroll_p %>% 
-  select(Department_Title, Year, Total_Pay, Base_Pay, Overtime_Pay, Other_Pay) %>% 
-  group_by(Year, Department_Title) %>% summarize(Tot_Cost = sum(Total_Pay, na.rm = TRUE), 
-                                                 Base_Cost = sum(Base_Pay, na.rm = TRUE), 
-                                                 Over_Cost = sum(Overtime_Pay, na.rm = TRUE), 
-                                                 Other_Cost = sum(Other_Pay, na.rm = TRUE)) %>% 
-                                        gather(Descriptive, Value, -Year, -Department_Title) %>% 
+  select(Department_Title, Year, `Total Pay ($)`, `Base Pay ($)`, `Overtime Pay ($)`, `Other Pay ($)`) %>% 
+  group_by(Year, Department_Title) %>% summarize(Tot_Cost = sum(`Total Pay ($)`, na.rm = TRUE), 
+                                                 Base_Cost = sum(`Base Pay ($)`, na.rm = TRUE), 
+                                                 Over_Cost = sum(`Overtime Pay ($)`, na.rm = TRUE), 
+                                                 Other_Cost = sum(`Other Pay ($)`, na.rm = TRUE)) %>% 
+                                        gather(Descriptive, `Value ($)`, -Year, -Department_Title) %>% 
                                         arrange(Year, Department_Title) %>%
                                         mutate(Descriptive = recode(Descriptive, 
                                                                     Tot_Cost = 'Total Cost', 
@@ -108,8 +110,8 @@ payroll_cost <- payroll_p %>%
 #Datasets for Question 6
 mean_yr <- payroll_p %>% 
   group_by(Department_Title, Year) %>%
-  summarize(Mean_Total = mean(Total_Pay, na.rm = TRUE), 
-            Mean_Base = mean(Base_Pay, na.rm = TRUE)) %>%
+  summarize(Mean_Total = mean(`Total Pay ($)`, na.rm = TRUE), 
+            Mean_Base = mean(`Base Pay ($)`, na.rm = TRUE)) %>%
   gather(Descriptive, Value, -Year, -Department_Title) %>%
   arrange(Department_Title, Year) %>% 
   mutate(Descriptive = recode(Descriptive, 
@@ -126,14 +128,14 @@ server <- function(input, output){
          col = "#75AADB", border = 'white',
          main = input$year,
          xlab = "Year",
-         ylab = "Pay")
+         ylab = "Pay ($)")
   })
   
   #Question 3
   output$table <- DT::renderDataTable(DT::datatable({
     data <- payroll_p[payroll_p$Year == input$Year,
-                      c('Department_Title', 'Job_Class_Title','Base_Pay', 
-                        'Overtime_Pay', 'Other_Pay', 'Total_Pay','Year')][c(1:input$n),]
+                      c('Department_Title', 'Job_Class_Title','Base Pay ($)', 
+                        'Overtime Pay ($)', 'Other Pay ($)', 'Total Pay ($)','Year')][c(1:input$n),]
     data
   }))
   
@@ -142,19 +144,19 @@ server <- function(input, output){
 
   output$table_dept <- DT::renderDataTable(DT::datatable({
     
-    if (input$Method == 'Value') {
+    if (input$Method == 'Value ($)') {
       data <- payroll_ddes[payroll_ddes$Year == input$Year2,
-                           c('Department_Title', 'Descriptive', 'Value')]
-      data <- data %>% group_by(Department_Title)%>% mutate(max_p = Value[1]) %>% 
-        arrange(desc(max_p)) %>% select(Department_Title, Descriptive, Value)}
+                           c('Department_Title', 'Descriptive', 'Value ($)')]
+      data <- data %>% group_by(Department_Title)%>% mutate(max_p = `Value ($)`[1]) %>% 
+        arrange(desc(max_p)) %>% select(Department_Title, Descriptive, `Value ($)`)}
     data <- data[1:(4*input$n2),]
     data
     
-    if (input$Method == 'Value1') {
+    if (input$Method == "Value ($)1") {
       data <- payroll_ddes[payroll_ddes$Year == input$Year2,
-                           c('Department_Title', 'Descriptive1', 'Value1')]
-      data <- data %>% group_by(Department_Title) %>% mutate(max_p = Value1[1]) %>%
-        arrange(desc(max_p))%>%select(Department_Title, Descriptive1, Value1)
+                           c('Department_Title', 'Descriptive1', 'Value ($)1')]
+      data <- data %>% group_by(Department_Title) %>% mutate(max_p = `Value ($)1`[1]) %>%
+        arrange(desc(max_p))%>%select(Department_Title, Descriptive1,`Value ($)1`)
     }
     data <- data[1:(4*input$n2),]
     data
@@ -164,9 +166,9 @@ server <- function(input, output){
   output$table_cost <- DT::renderDataTable(DT::datatable({
     data <- payroll_cost
     data <- data[data$Year == input$year3,
-                 c('Department_Title', 'Descriptive', 'Value')]
-    data <- data %>% group_by(Department_Title)%>% mutate(max_r = Value[1]) %>% 
-      arrange(desc(max_r)) %>% select(Department_Title, Descriptive, Value)
+                 c('Department_Title', 'Descriptive', 'Value ($)')]
+    data <- data %>% group_by(Department_Title)%>% mutate(max_r = `Value ($)`) %>% 
+      arrange(desc(max_r)) %>% select(Department_Title, Descriptive, `Value ($)`)
     data <- data[1:(4*input$n3),]
     data
   }))
@@ -176,7 +178,7 @@ server <- function(input, output){
     ggplot(data = mean_yr[mean_yr$Department_Title == input$Department, ])+
       geom_bar(mapping = aes(x = Year, y = Value, fill = Descriptive), stat = 'identity', 
                position = 'dodge')+
-      scale_x_continuous(breaks = unique(mean_yr$Year))
+      scale_x_continuous(breaks = unique(mean_yr$Year)) 
   })
   
 }
@@ -193,10 +195,10 @@ ui <- navbarPage(
                   choices = sort(unique(payroll_p$Year))),
       selectInput('payment', 'Type of Payment:', 
                   choices = list(
-                    'Total Pay' = c('Total_Pay'),
-                    'Base Pay'= c('Base_Pay'), 
-                    'Overtime Pay' = c('Overtime_Pay'),
-                    'Other Pay' = c('Other_Pay')
+                    'Total Pay' = c('Total Pay ($)'),
+                    'Base Pay'= c('Base Pay ($)'), 
+                    'Overtime Pay' = c('Overtime Pay ($)'),
+                    'Other Pay' = c('Other Pay ($)')
                   ))
     ),
     
@@ -213,7 +215,7 @@ ui <- navbarPage(
     column(4,
            selectInput("Year",
                        "Year:",
-                      c(unique(payroll_p$Year)),
+                      c(sort(unique(payroll_p$Year))),
                        selected = 2017))
     ,
     column(4,
@@ -243,8 +245,8 @@ ui <- navbarPage(
       column(4,
              selectInput("Method",
                          "Method:",
-                         choices =  list('Median' = 'Value', 
-                                         'Mean' = 'Value1'),
+                         choices =  list('Median' = 'Value ($)', 
+                                         'Mean' = 'Value ($)1'),
                          selected = 'Median'))
       ,
       column(4,
@@ -289,6 +291,7 @@ ui <- navbarPage(
 )
 
 shinyApp(ui = ui, server = server)
+deployApp()
 
 
 ##### Please refer to hw3.R for the answers to Question 2

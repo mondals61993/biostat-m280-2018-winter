@@ -5,6 +5,8 @@ account: mondals
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 290656
-bundleId: 1248369
+bundleId: 1248469
 url: https://mondals.shinyapps.io/question1/
-when: 1519969317.63027
+when: 1519972874.41536
+asMultiple: FALSE
+asStatic: FALSE
