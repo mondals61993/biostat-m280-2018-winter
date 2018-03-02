@@ -1,0 +1,10 @@
+name: question1
+title:
+username:
+account: mondals
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 290656
+bundleId: 1248369
+url: https://mondals.shinyapps.io/question1/
+when: 1519969317.63027
