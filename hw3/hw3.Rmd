@@ -16,25 +16,37 @@ library(RSQLite)
 ## Q1 LA City Employee Payroll
 ### 1. For efficiency of the Shiny app, you should first pre-process, pare down, tidy, and save the data, e.g., as a compressed RDS file, to be used in the app.
 
-```{r}
+```{r warning = FALSE, message = FALSE}
 
 #setwd("~/biostat-m280-2018-winter/hw3/question1")
 
-payroll <- read_csv(file = '/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', col_names = TRUE)
+payroll <- read_csv(file = '/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', 
+                    col_names = TRUE)
 
 
-payroll_p <- payroll %>% select(Year, `Row ID`,`Department Title`, `Job Class Title`, 
-                                `Projected Annual Salary`, `Total Payments`, `Base Pay`, 
-                                `Overtime Pay`, `Other Pay (Payroll Explorer)`)
+payroll_p <- payroll %>% select(Year, `Row ID`, `Department Title`, 
+                                `Job Class Title`, 
+                                `Projected Annual Salary`, `Total Payments`, 
+                                `Base Pay`, `Overtime Pay`, 
+                                `Other Pay (Payroll Explorer)`)
 names(payroll_p) <- c('Year', 'Row ID', 'Department_Title', 'Job_Class_Title' ,
                       'Proj_An_Sal', 'Total_Pay', 'Base_Pay', 
                       'Overtime_Pay', 'Other_Pay')
 
-payroll_p <-payroll_p %>% mutate('Total Pay ($)' = round(as.numeric(gsub('\\$|,', '', Total_Pay)),2),
-                                 'Base Pay ($)' =  round(as.numeric(gsub('\\$|,', '', Base_Pay)),2),
-                                 'Overtime Pay ($)' = round(as.numeric(gsub('\\$|,', '', Overtime_Pay)),2),
-                                 'Other Pay ($)' = round(as.numeric(gsub('\\$|,', '', Other_Pay)),2))
-saveRDS(payroll_p, '/home/mondals/biostat-m280-2018-winter/hw3/question1/payroll_p.rds', compress = TRUE)
+payroll_p <- payroll_p %>% mutate('Total Pay ($)' = 
+                                   round(as.numeric(gsub('\\$|,', '', 
+                                                         Total_Pay)),2),
+                                 'Base Pay ($)' =  
+                                   round(as.numeric(gsub('\\$|,', '',
+                                                         Base_Pay)),2),
+                                 'Overtime Pay ($)' = 
+                                   round(as.numeric(gsub('\\$|,', '', 
+                                                         Overtime_Pay)),2),
+                                 'Other Pay ($)' = 
+                                   round(as.numeric(gsub('\\$|,', '', 
+                                                         Other_Pay)),2))
+saveRDS(payroll_p, '/home/mondals/biostat-m280-2018-winter/hw3/question1/payroll_p.rds', 
+        compress = TRUE)
 ```
 
 For the rest of the question, please refer to app.R!
@@ -46,23 +58,24 @@ How many tickets are in this data set?
 
 ```{r eval = FALSE}
 #connect to SQLite DB
-con <- dbConnect(RSQLite:: SQLite(), '/home/m280-data/la_parking/LA_Parking_Citations.sqlite')
+con <- dbConnect(RSQLite:: SQLite(), 
+                 '/home/m280-data/la_parking/LA_Parking_Citations.sqlite')
 dbListTables(con)
 
-tick<- dplyr::tbl(con, "latix")
+tick <- dplyr::tbl(con, "latix")
 
 ```
 
 NOTE: I just kept a description of all the variables in the document using the below SQLite command. 
 
 ```{r eval = FALSE}
-res<-dbSendQuery(con, 'pragma table_info(latix)')
+res <- dbSendQuery(con, 'pragma table_info(latix)')
 dbFetch(res)
 ```
 
 
 ```{r}
-numtick<-tick %>% 
+numtick<- tick %>% 
   select(Ticket_number) %>%
   summarize(num_t = n_distinct(Ticket_number)) %>%
   collect()
@@ -76,7 +89,7 @@ There are 404438 tickets.
 Which time periods to these tickets span?
 
 ```{r}
-timep<- collect(tick) %>% 
+timep <- collect(tick) %>% 
   select(Issue_DateTime) %>%
   summarize(min = min(Issue_DateTime, na.rm = TRUE), 
             max = max(Issue_DateTime, na.rm = TRUE)) %>%
@@ -91,7 +104,9 @@ Refer to the output above to see the specific datetime ranges.
 
 Which years have most data?
 ```{r}
-years<- dbSendQuery(con, 'Select (strftime("%Y",datetime(Issue_DateTime, "unixepoch", "localtime"))) as Year, 
+years<- dbSendQuery(con, 
+'Select (strftime("%Y", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+as Year, 
                     count(*) from latix 
                     GROUP BY Year
                     ORDER BY count(*) DESC')
@@ -106,7 +121,9 @@ dbFetch(years)
 
 ```{r}
 #hour
-hour<- dbSendQuery(con, 'Select (strftime("%H", datetime(Issue_DateTime, "unixepoch", "localtime"))) as Hour, 
+hour <- dbSendQuery(con, 
+    'Select (strftime("%H", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+      as Hour, 
                         count(*) from latix
                         GROUP BY Hour
                         ORDER BY count(*) DESC')
@@ -117,7 +134,9 @@ dbFetch(hour)
 
 ```{r}
 #weekday
-wkday<- dbSendQuery(con, 'Select (strftime("%w", datetime(Issue_DateTime, "unixepoch", "localtime"))) as weekday, 
+wkday <- dbSendQuery(con, 
+    'Select (strftime("%w", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as weekday, 
                         count(*) from latix
                         GROUP BY weekday
                         ORDER BY count(*) DESC')
@@ -128,7 +147,9 @@ Tuesday and Thursday are the most common weekdays to get ticketed.
 
 ```{r}
 #monthday
-mnthd<- dbSendQuery(con, 'Select (strftime("%d", datetime(Issue_DateTime, "unixepoch", "localtime"))) as mnthd, 
+mnthd <- dbSendQuery(con, 
+    'Select (strftime("%d", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as mnthd, 
                         count(*) from latix
                         GROUP BY mnthd
                         ORDER BY count(*) DESC')
@@ -142,7 +163,9 @@ The 22nd and the 8th are the most common month days to get ticketed.
 ```{r}
 #month
 
-mnth<-dbSendQuery(con, 'Select (strftime("%m", datetime(Issue_DateTime, "unixepoch", "localtime"))) as mnth, 
+mnth <- dbSendQuery(con, 
+    'Select (strftime("%m", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as mnth, 
                         count(*) from latix
                         GROUP BY mnth
                         ORDER BY count(*) DESC')
@@ -154,7 +177,7 @@ The most common months to get ticketed are March and August.
 
 ###3. Which car makes received most citations?
 ```{r}
-m_cit<-tick %>%
+m_cit <- tick %>%
   select(Ticket_number, Make)%>%
   group_by(Make)%>%
   summarize(Most_Citations = n())%>%
@@ -168,7 +191,7 @@ Toyota and Honda received the most citations (but this might also be that higher
 
 ###4. How many different colors of cars were ticketed? Which color attracted most tickets?
 ```{r}
-color_cit <-tick %>% 
+color_cit <- tick %>% 
   select(Ticket_number, Color) %>%
   group_by(Color) %>%
   summarize(Most_Citations = n()) %>%
@@ -183,11 +206,11 @@ There 66 different colors of cars ticketed. Black and white colored cars attract
 ###5. What are the most common ticket types?
 
 ```{r}
-viol_code<-tick %>% 
-  select(Ticket_number, Violation_code)%>%
-  group_by(Violation_code)%>%
+viol_code <- tick %>% 
+  select(Ticket_number, Violation_code) %>%
+  group_by(Violation_code) %>%
   summarize(Most = n()) %>%
-  arrange(desc(Most))%>%
+  arrange(desc(Most)) %>%
   collect()
 
 viol_code
@@ -196,7 +219,7 @@ viol_code
 
 
 ```{r}
-viol_des<-tick %>%
+viol_des <- tick %>%
   select(Ticket_number, Violation_Description)%>%
   group_by(Violation_Description)%>%
   summarize(Most = n())%>%
@@ -214,7 +237,7 @@ The most common violation code is 80.69BS. The mot common violation description 
 mon_p <- tick %>%
   select(Ticket_number, Issue_DateTime, Fine_amount)%>%
   collect() %>%
-  mutate(Convert =as.POSIXct(Issue_DateTime, origin="1970-01-01", tz = 'PST'),
+  mutate(Convert = as.POSIXct(Issue_DateTime, origin = "1970-01-01", tz = 'PST'),
          Year = format(Convert, '%Y')) %>%
   group_by(Year) %>%
   summarize(Fine_Sum = sum(Fine_amount, na.rm = TRUE)) %>%
@@ -234,7 +257,7 @@ In 2015, 151,006,794 dollars was collected on parking tickets. In 2016, 123,236,
 Do the number of citations change if we look at it by color of car and make?
 
 ```{r}
-cmak<- tick %>%
+cmak <- tick %>%
   select(Ticket_number, Color, Make)%>%
   group_by(Color, Make)%>%
   summarize(cits = n()) %>%
