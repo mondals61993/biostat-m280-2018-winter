@@ -1,5 +1,5 @@
 ---
-title: "Homework 3-- Question 2"
+title: "Homework 3"
 author: "Sangeeta Mondal"
 date: "2/27/2018"
 output: html_document
@@ -106,8 +106,8 @@ timep <- tick %>%
   
   collect()
  
-min<-sqldf('Select datetime(min,"unixepoch","localtime") from timep')
-max<-sqldf('Select datetime(max, "unixepoch", "localtime") from timep')
+min <- sqldf('Select datetime(min,"unixepoch","localtime") from timep')
+max <- sqldf('Select datetime(max, "unixepoch", "localtime") from timep')
 
 min
 max
@@ -118,7 +118,7 @@ Refer to the output above to see the specific datetime ranges. The earliest time
 
 Which years have most data?
 ```{r}
-years<- dbSendQuery(con, 
+years <- dbSendQuery(con, 
     'Select (strftime("%Y", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
     as Year, 
                     count(*) from latix 
@@ -289,11 +289,12 @@ cmak <- tick %>%
 
 cmak 
 
-ggplot(data = cmak) + 
-  geom_bar(mapping = aes(x = Color, y= cits), stat = 'identity') + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ylab('Number of Citations') 
-
+ggplot (data = color_cit) + 
+  geom_bar (mapping = aes(x = Color, y= Most_Citations), stat = 'identity') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
-
-Interestingly enough, Gray and White Toyotas have the most tickets. 
+           
+      
+           
+           
+           
