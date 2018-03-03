@@ -1,0 +1,300 @@
+---
+title: "Homework 3"
+author: "Sangeeta Mondal"
+date: "2/27/2018"
+output: html_document
+---
+```{r warning = FALSE, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(shiny)
+library(DBI)
+library(RSQLite)
+library(sqldf)
+```
+
+## Q1 LA City Employee Payroll
+### 1. For efficiency of the Shiny app, you should first pre-process, pare down, tidy, and save the data, e.g., as a compressed RDS file, to be used in the app.
+
+```{r warning = FALSE, message = FALSE}
+
+#setwd("~/biostat-m280-2018-winter/hw3/question1")  
+
+payroll <- read_csv(file = '/home/m280-data/la_payroll/LA_City_Employee_Payroll.csv', 
+                    col_names = TRUE)
+
+
+payroll_p <- payroll %>% select(Year, `Row ID`, `Department Title`, 
+                                `Job Class Title`, 
+                                `Projected Annual Salary`, `Total Payments`, 
+                                `Base Pay`, `Overtime Pay`, 
+                                `Other Pay (Payroll Explorer)`)
+names(payroll_p) <- c('Year', 'Row ID', 'Department_Title', 'Job_Class_Title' ,
+                      'Proj_An_Sal', 'Total_Pay', 'Base_Pay', 
+                      'Overtime_Pay', 'Other_Pay')
+
+payroll_p <- payroll_p %>% mutate('Total Pay ($)' = 
+                                   round(as.numeric(gsub('\\$|,', '', 
+                                                         Total_Pay)),2),
+                                 'Base Pay ($)' =  
+                                   round(as.numeric(gsub('\\$|,', '',
+                                                         Base_Pay)),2),
+                                 'Overtime Pay ($)' = 
+                                   round(as.numeric(gsub('\\$|,', '', 
+                                                         Overtime_Pay)),2),
+                                 'Other Pay ($)' = 
+                                   round(as.numeric(gsub('\\$|,', '', 
+                                                         Other_Pay)),2))
+saveRDS(payroll_p, '/home/mondals/biostat-m280-2018-winter/hw3/question1/payroll_p.rds', 
+        compress = TRUE)
+
+#If you want to run RDS file locally, then save payroll_p.rds in to your desired 
+#wd. My desired wd is written in the comment at the beginning of this code block.
+#Please do not points off for reproducibility!!!!! :):)
+
+# I have other 'processed' datasets in the app.R file as well that I used to build my Shiny App. They 
+# are all described in the app.R file with relation to every question! I just kept them in the app.R
+# because they are more inherently tied to the app than the RDS file. 
+```
+
+For the rest of the question, please refer to app.R!
+
+## Q2 LA City Parking War
+### 1. How many tickets are in this data set? Which time period do these tickets span? Which years have most data?
+
+How many tickets are in this data set?
+
+```{r}
+#connect to SQLite DB
+con <- dbConnect(RSQLite:: SQLite(), 
+                 '/home/m280-data/la_parking/LA_Parking_Citations.sqlite')
+dbListTables(con)
+
+tick <- dplyr::tbl(con, "latix")
+
+```
+
+NOTE: I just kept a description of all the variables in the document using the below SQLite command. 
+
+```{r eval = FALSE}
+res <- dbSendQuery(con, 'pragma table_info(latix)')
+dbFetch(res)
+dbClearResult(res)
+```
+
+
+```{r}
+numtick<- tick %>% 
+  select(Ticket_number) %>%
+  summarize(num_t = n_distinct(Ticket_number)) %>%
+  collect()
+
+numtick
+```
+
+
+There are 404438 tickets.
+
+Which time periods to these tickets span?
+
+```{r}
+timep <- tick %>% 
+  select(Issue_DateTime) %>%
+  summarize( min = min(Issue_DateTime, na.rm = TRUE), 
+             max = max(Issue_DateTime, na.rm = TRUE)) %>%
+  
+  collect()
+ 
+min <- sqldf('Select datetime(min,"unixepoch","localtime") from timep')
+max <- sqldf('Select datetime(max, "unixepoch", "localtime") from timep')
+
+min
+max
+
+```
+
+Refer to the output above to see the specific datetime ranges. The earliest time was 04-27-2010 14:40. The latest time was 12-29-2017 17:41. 
+
+Which years have most data?
+```{r}
+years <- dbSendQuery(con, 
+    'Select (strftime("%Y", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as Year, 
+                    count(*) from latix 
+                    GROUP BY Year
+                    ORDER BY count(*) DESC')
+dbFetch(years)
+dbClearResult(years)
+  
+```
+
+2015 and 2016 have the most data. 
+
+
+### 2. When (which hour, weekday, month day, and month) are you most likely to get a ticket and when are you least likely to get a ticket?
+
+```{r}
+#hour
+hour <- dbSendQuery(con, 
+    'Select (strftime("%H", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+      as Hour, 
+                        count(*) from latix
+                        GROUP BY Hour
+                        ORDER BY count(*) DESC')
+dbFetch(hour)
+dbClearResult(hour)
+
+```
+
+3, 5, and 1 PM are the most common times to get parking tickets. 
+
+```{r}
+#weekday
+wkday <- dbSendQuery(con, 
+    'Select (strftime("%w", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as weekday, 
+                        count(*) from latix
+                        GROUP BY weekday
+                        ORDER BY count(*) DESC')
+dbFetch(wkday)
+dbClearResult(wkday)
+```
+
+Tuesday and Thursday are the most common weekdays to get ticketed. 
+
+```{r}
+#monthday
+mnthd <- dbSendQuery(con, 
+    'Select (strftime("%d", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as mnthd, 
+                        count(*) from latix
+                        GROUP BY mnthd
+                        ORDER BY count(*) DESC')
+dbFetch(mnthd)
+dbClearResult(mnthd)
+
+```
+
+
+The 22nd and the 8th are the most common month days to get ticketed. 
+
+```{r}
+#month
+
+mnth <- dbSendQuery(con, 
+    'Select (strftime("%m", datetime(Issue_DateTime, "unixepoch", "localtime"))) 
+    as mnth, 
+                        count(*) from latix
+                        GROUP BY mnth
+                        ORDER BY count(*) DESC')
+dbFetch(mnth)
+dbClearResult(mnth)
+```
+
+The most common months to get ticketed are March and August. 
+
+
+###3. Which car makes received most citations?
+```{r}
+m_cit <- tick %>%
+  select(Ticket_number, Make)%>%
+  group_by(Make)%>%
+  summarize(Most_Citations = n())%>%
+  arrange(desc(Most_Citations))%>%
+  collect()
+
+m_cit
+```
+
+Toyota and Honda received the most citations (but this might also be that higher proportions of people own Toyota and Honda!). 
+
+###4. How many different colors of cars were ticketed? Which color attracted most tickets?
+```{r}
+color_cit <- tick %>% 
+  select(Ticket_number, Color) %>%
+  group_by(Color) %>%
+  summarize(Most_Citations = n()) %>%
+  arrange(desc(Most_Citations))%>%
+  collect()
+
+color_cit
+```
+
+There 66 different colors of cars ticketed. Black and white colored cars attracted the most tickets (though as above, this might also be because higher proportions of people own black and white cars). 
+
+###5. What are the most common ticket types?
+
+```{r}
+viol_code <- tick %>% 
+  select(Ticket_number, Violation_code) %>%
+  group_by(Violation_code) %>%
+  summarize(Most = n()) %>%
+  arrange(desc(Most)) %>%
+  collect()
+
+viol_code
+
+```
+
+
+```{r}
+viol_des <- tick %>%
+  select(Ticket_number, Violation_Description)%>%
+  group_by(Violation_Description)%>%
+  summarize(Most = n())%>%
+  arrange(desc(Most))%>%
+  collect()
+
+viol_des
+```
+
+The most common violation code is 80.69BS. The mot common violation description is NO PARK/STREET Clean. 
+
+###6. How much money was collected on parking tickets in 2015 and 2016?
+
+```{r}
+mon_p <- tick %>%
+  select(Ticket_number, Issue_DateTime, Fine_amount)%>%
+  collect() %>%
+  mutate(Convert = as.POSIXct(Issue_DateTime, origin = "1970-01-01", tz = 'PST'),
+         Year = format(Convert, '%Y')) %>%
+  group_by(Year) %>%
+  summarize(Fine_Sum = sum(Fine_amount, na.rm = TRUE)) %>%
+  filter(Year %in% c(2015, 2016)) %>%
+  collect()
+
+mon_p
+
+```
+
+
+
+In 2015, 151,006,794 dollars was collected on parking tickets. In 2016, 123,236,136 dollars was collected. LA County is going to get rich off of parking citations!!!!!
+
+###7. Visualize any other information you are interested in.
+
+Do the number of citations change if we look at it by color of car and make? 
+
+I made a table. Furthermore, I made a bar graph to observe the number of 
+citations per car color. 
+
+```{r}
+cmak <- tick %>%
+  select(Ticket_number, Color, Make)%>%
+  group_by(Color, Make)%>%
+  summarize(cits = n()) %>%
+  arrange(desc(cits))%>%
+  collect()
+
+cmak 
+
+ggplot (data = color_cit) + 
+  geom_bar (mapping = aes(x = Color, y= Most_Citations), stat = 'identity') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+           
+      
+           
+           
+           
