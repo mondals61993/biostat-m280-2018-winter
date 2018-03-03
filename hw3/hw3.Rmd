@@ -52,6 +52,10 @@ saveRDS(payroll_p, '/home/mondals/biostat-m280-2018-winter/hw3/question1/payroll
 #If you want to run RDS file locally, then save payroll_p.rds in to your desired 
 #wd. My desired wd is written in the comment at the beginning of this code block.
 #Please do not points off for reproducibility!!!!! :):)
+
+# I have other 'processed' datasets in the app.R file as well that I used to build my Shiny App. They 
+# are all described in the app.R file with relation to every question! I just kept them in the app.R
+# because they are more inherently tied to the app than the RDS file. 
 ```
 
 For the rest of the question, please refer to app.R!
