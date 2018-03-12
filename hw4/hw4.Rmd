@@ -1,0 +1,87 @@
+---
+title: "hw4"
+output: html_document
+---
+
+```{r warning = FALSE, eval = FALSE}
+library(sparklyr)
+library(ggplot2)
+library(dplyr)
+library(mapdata)
+```
+
+```{r}
+Sys.setenv(SPARK_HOME="/usr/lib/spark")
+config <- spark_config()
+sc <- spark_connect(master = "yarn-client", config = config)
+sc
+```
+
+```{r}
+flights_tbl <- tbl(sc, 'flights')
+airlines_tbl <- tbl(sc, 'airlines')
+airports_tbl <- tbl(sc, 'airports')
+
+```
+
+##1. Map the top 10 busiest airports. Size of dots should reflect the number of flights through that destination.
+
+```{r}
+usa <- map_data('usa')
+
+```
+
+
+```{r}
+busiest10 <- flights_tbl %>% select(origin, dest) %>% 
+  group_by(origin) %>% summarize(cnt = count()) %>% 
+  arrange(desc(cnt)) %>%
+  collect()
+```
+
+```{r}
+busiest10_dest <- flights_tbl %>% select(origin, dest) %>%
+  group_by(dest) %>% summarize(cnt2 = count()) %>%
+  arrange(desc(cnt2)) %>%
+  collect()
+
+```
+
+```{r}
+busiest10<-busiest10[1:10,]
+
+busiest10_dest<-busiest10_dest[1:10,]
+
+names(busiest10)[1] <- 'airport'
+names(busiest10_dest)[1] <- 'airport'
+
+busiest10 <- busiest10 %>% mutate(sum = rowSums(.[2:3])) %>%
+  arrange(desc(sum))
+```
+
+```{r}
+busiest_coord <- airports_tbl %>%
+  select(faa, lat, lon) %>%
+  filter(faa %in% busiest10$airport) %>% 
+  mutate(lat = as.numeric(as.character(lat)),
+         lon = as.numeric(as.character(lon))) %>%
+  collect()
+```
+
+```{r}
+usa <- map_data("usa")
+base_map <- ggplot() + geom_polygon(data = usa, 
+                                      aes(x = long, y = lat, group = group)) + 
+                      coord_fixed(1.3)
+base_map + geom_point (data = busiest_coord, 
+                       aes(x = lon, y = lat), 
+                       color = 'yellow', 
+                       size = 4)
+```
+
+##2. Map the top 10 busiest direct routes. Size of lines should reflect the number of flights through that route.
+
+```{r}
+busiest_route <- flights_tbl %>% select(year, origin, dest) %>%
+  collect()
+```
