@@ -8,6 +8,7 @@ library(sparklyr)
 library(ggplot2)
 library(dplyr)
 library(mapdata)
+library(ggrepel)
 ```
 
 ```{r}
@@ -48,15 +49,14 @@ busiest10_dest <- flights_tbl %>% select(origin, dest) %>%
 ```
 
 ```{r}
-busiest10<-busiest10[1:10,]
+busiest10<-busiest10 %>% head(10) %>% 
+  rename(airport = origin)
 
-busiest10_dest<-busiest10_dest[1:10,]
+busiest10_dest<-busiest10_dest %>% head(10) %>%
+  rename(airport = dest)
 
-names(busiest10)[1] <- 'airport'
-names(busiest10_dest)[1] <- 'airport'
-
-busiest10 <- busiest10 %>% mutate(sum = rowSums(.[2:3])) %>%
-  arrange(desc(sum))
+busiest10 <- busiest10 %>% inner_join(busiest10_dest, by = 'airport') %>%                         mutate(sum = rowSums(.[2:3])) %>%
+                      arrange(desc(sum))
 ```
 
 ```{r}
@@ -83,5 +83,148 @@ base_map + geom_point (data = busiest_coord,
 
 ```{r}
 busiest_route <- flights_tbl %>% select(year, origin, dest) %>%
+  filter(year == 1987) %>%
+  group_by(origin, dest) %>%
+  summarize(n = count()) %>%
   collect()
+
+```
+
+```{r}
+busiest_route <- busiest_route %>%
+  arrange(desc(n)) %>%
+  head(10) %>% ungroup() %>%
+  mutate(rank = seq(1:10)) 
+
+origin_coords <- airports_tbl %>% 
+  select(lat, lon, faa) %>% 
+  filter(faa %in% busiest_route$origin) %>%
+  rename(origin = faa) %>%
+  collect() 
+
+dest_coords <- airports_tbl %>%
+  select(lat, lon, faa) %>% 
+  filter(faa %in% busiest_route$dest) %>%
+  rename(dest = faa, lat_dest = lat, lon_dest = lon) %>%
+  collect()
+
+busiest_route2 <- inner_join(busiest_route, origin_coords, by = 'origin')
+busiest_route2 <- inner_join(busiest_route2, dest_coords, by = 'dest')
+busiest_route2 <- busiest_route2 %>%
+  mutate(lat = as.numeric(lat),
+         lon = as.numeric(lon),
+         lat_dest = as.numeric(lat_dest),
+         lon_dest = as.numeric(lon_dest))
+
+```
+
+```{r}
+airports<-sort(unique(c(busiest_route2$origin,
+                        busiest_route2$dest)))
+
+lat_lon <- airports_tbl %>% select(faa, lat, lon) %>%
+  filter(faa %in% airports) %>% 
+  collect() %>% arrange(faa)
+
+airports <- data.frame(airport = airports, lat_lon[,2:3])
+airports <- airports %>% mutate(lat = as.numeric(lat), 
+                                lon = as.numeric(lon))
+
+```
+
+```{r}
+usamap <- borders("usa")
+
+ggplot() + usamap + geom_curve(data = busiest_route2, 
+             aes(x = lon, y = lat, 
+                 xend = lon_dest, yend = lat_dest),
+             col = "#b29e7d") + 
+          geom_point(data = airports,
+                     aes(x = lon, y = lat)) + 
+          geom_text_repel(data=airports, 
+                  aes(x = lon, y = lat, label = airport), 
+                  col = "black", size = 2, 
+                  segment.color = NA)
+```
+
+##3. 
+###a. Reproduce above plot. Visualize and explain some prominent features you observe. For example, what happened at points 1-5?
+
+```{r}
+air_traf <- flights_tbl %>%
+  select(year, month, dayofmonth, origin, dest) %>%
+  filter(year >= 1998) %>%
+  filter(origin == 'LAX'|dest == 'LAX') %>%
+  group_by(year, month, dayofmonth) %>%
+  summarize(cnt= count()) %>%
+  collect()
+
+air_traf
+```
+```{r}
+air_traf <- air_traf %>%
+  ungroup() %>%
+  mutate(fin_date = as.Date(with(air_traf, paste(year, month, 
+                                         dayofmonth, 
+                                         sep = '-')),
+         '%Y-%m-%d'))
+```
+
+```{r}
+ggplot(data = air_traf) + 
+  geom_line(mapping=aes(x= fin_date, y = cnt)) + 
+  labs(x = 'date',
+      y = 'n', 
+      title = 'LAX air traffic'
+  )
+  
+```
+
+###b. Visualize and explain seasonal effects.
+```{r}
+
+air_traf <- air_traf %>% ungroup() %>%
+  mutate(season = ifelse(month >= 1 & month <=3, 'Winter',
+                        ifelse(month >= 4 & month <6, 'Spring',
+                          ifelse(month >= 6 & month <= 8, 'Summer', 
+                                ifelse(month >= 9 & month <=12, 'Fall',
+                                'F')))))
+
+ggplot(data = air_traf) + 
+  geom_freqpoly(mapping= aes(x = cnt, color = season)) + 
+  labs(x = 'Flight Count')
+
+
+```
+
+```{r}
+ggplot(data = air_traf) + 
+  geom_boxplot(mapping = aes(x = season, y = cnt))
+
+```
+
+###c. Visualize and explain weekly effects.
+```{r}
+air_traf <- air_traf %>%
+  mutate(wknum = strftime(fin_date, format = '%V'))
+
+ggplot(data = air_traf) + 
+  geom_boxplot(mapping=aes(x = wknum, y = cnt)) + 
+  labs(x = 'Week Number', 
+       y = 'n', 
+       title = 'Air Traffic by Week of the Year') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+###d. Map top 10 destinations from LAX. Size of dots should reflect the number of flights from LAX to that destination. 
+
+```{r}
+top10 <- flights_tbl %>% 
+  select(year, month, dayofmonth, origin, dest) %>%
+  filter(origin == 'LAX') %>%
+  filter(year >= 1998) %>%
+  group_by(dest) %>%
+  summarize(cnt = n()) %>%
+  collect()
+  
 ```
