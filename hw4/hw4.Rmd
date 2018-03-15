@@ -49,14 +49,15 @@ busiest10_dest <- flights_tbl %>% select(origin, dest) %>%
 ```
 
 ```{r}
-busiest10<-busiest10 %>% head(10) %>% 
+busiest10 <- busiest10 %>% head(10) %>% 
   rename(airport = origin)
 
-busiest10_dest<-busiest10_dest %>% head(10) %>%
+busiest10_dest <- busiest10_dest %>% head(10) %>%
   rename(airport = dest)
 
-busiest10 <- busiest10 %>% inner_join(busiest10_dest, by = 'airport') %>%                         mutate(sum = rowSums(.[2:3])) %>%
-                      arrange(desc(sum))
+busiest10 <- busiest10 %>% 
+  inner_join(busiest10_dest, by = 'airport') %>%                              mutate(sum = rowSums(.[2:3])) %>%
+  arrange(desc(sum))
 ```
 
 ```{r}
@@ -82,7 +83,30 @@ base_map + geom_point (data = busiest_coord,
 ##2. Map the top 10 busiest direct routes. Size of lines should reflect the number of flights through that route.
 
 ```{r}
-busiest_route <- flights_tbl %>% select(year, origin, dest) %>%
+all <- flights_tbl %>%
+  select(year, month, dayofmonth,
+         origin, dest) %>%
+  filter(year >= 1998) %>%
+  filter(origin == 'LAX'|dest == 'LAX') %>%
+  collect()
+```
+
+```{r}
+flight_data <- flights_tbl %>% 
+  select(year, month, dayofmonth,
+         origin, dest) %>%
+  filter(year == 1987) %>%
+  collect()
+```
+
+```{r}
+airports <- airports_tbl %>%
+  select(faa, lat, lon) %>%
+  collect()
+```
+
+```{r}
+busiest_route <- flight_data %>% select(year, origin, dest) %>%
   filter(year == 1987) %>%
   group_by(origin, dest) %>%
   summarize(n = count()) %>%
@@ -161,6 +185,7 @@ air_traf <- flights_tbl %>%
 
 air_traf
 ```
+
 ```{r}
 air_traf <- air_traf %>%
   ungroup() %>%
@@ -172,7 +197,7 @@ air_traf <- air_traf %>%
 
 ```{r}
 ggplot(data = air_traf) + 
-  geom_line(mapping=aes(x= fin_date, y = cnt)) + 
+  geom_line(mapping = aes(x = fin_date, y = cnt)) + 
   labs(x = 'date',
       y = 'n', 
       title = 'LAX air traffic'
@@ -191,7 +216,7 @@ air_traf <- air_traf %>% ungroup() %>%
                                 'F')))))
 
 ggplot(data = air_traf) + 
-  geom_freqpoly(mapping= aes(x = cnt, color = season)) + 
+  geom_freqpoly(mapping = aes(x = cnt, color = season)) + 
   labs(x = 'Flight Count')
 
 
@@ -202,6 +227,8 @@ ggplot(data = air_traf) +
   geom_boxplot(mapping = aes(x = season, y = cnt))
 
 ```
+
+I added a 'season' variable that was broken up into Fall, Spring, Summer, and Winter. 
 
 ###c. Visualize and explain weekly effects.
 ```{r}
@@ -219,12 +246,93 @@ ggplot(data = air_traf) +
 ###d. Map top 10 destinations from LAX. Size of dots should reflect the number of flights from LAX to that destination. 
 
 ```{r}
-top10 <- flights_tbl %>% 
+top10_lax <- all %>% 
   select(year, month, dayofmonth, origin, dest) %>%
   filter(origin == 'LAX') %>%
   filter(year >= 1998) %>%
   group_by(dest) %>%
   summarize(cnt = n()) %>%
   collect()
-  
 ```
+
+```{r}
+top10_lax <- top10_lax %>% arrange(desc(cnt))
+```
+
+```{r}
+flight_coords <- airports %>%
+  select(faa, lat, lon) %>%
+  filter(faa %in% top10$dest) %>%
+  rename(dest = faa) %>%
+  collect()
+
+la_coords <- airports %>%
+  select(faa, lat, lon) %>%
+  filter(faa == 'LAX') %>%
+  rename(origin = faa,
+         la_lat = lat,
+         la_lon = lon) 
+
+top10_lax <- inner_join(top10_lax, flight_coords, by = 'dest')
+top10_lax$origin <- rep('LAX', 104)
+top10_lax <- inner_join(top10_lax, la_coords, by = 'origin')
+
+```
+
+```{r}
+top10_lax <- top10_lax %>%
+  mutate(lat = as.numeric(lat), 
+         lon = as.numeric(lon),
+         la_lat = as.numeric(la_lat),
+         la_lon = as.numeric(la_lon))
+
+top10_lax <- top10_lax %>%
+  arrange(desc(cnt)) %>%
+  head(10) %>% ungroup() %>%
+  mutate(rank = seq(1:10))
+```
+
+```{r}
+airports_2<-sort(unique(c(top10_lax$origin,
+                        top10_lax$dest)))
+
+lat_lon <- airports %>% select(faa, lat, lon) %>%
+  filter(faa %in% airports_2) %>% 
+  collect() %>% arrange(faa)
+
+airports_2 <- data.frame(airport = airports_2, lat_lon[,2:3])
+airports_2 <- airports_2 %>% mutate(lat = as.numeric(lat), 
+                                lon = as.numeric(lon))
+```
+
+```{r}
+top10_lax <- top10_lax %>% 
+  rename(airport = dest) %>%
+  arrange(airport)
+```
+
+```{r}
+airports_2 <- airports_2 %>% filter(airport != 'LAX') %>%
+  arrange(airport) %>%
+  mutate(rank = top10_lax$rank)
+```
+
+
+```{r warning = FALSE, message = FALSE}
+usamap2 <- borders("usa")
+
+ggplot() + usamap2 + geom_curve(data = top10_lax, 
+             aes(x = la_lon, y = la_lat, 
+                 xend = lon, yend = lat),
+             col = "#b29e7d") + 
+          geom_point(data = airports_2,
+                     aes(x = lon, y = lat, size = factor(rank))) + 
+          geom_text_repel(data=airports_2, 
+                  aes(x = lon, y = lat, label = airport), 
+                  col = "black", size = 2, 
+                  segment.color = NA) 
+         
+
+ 
+```
+
