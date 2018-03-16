@@ -2,8 +2,11 @@
 title: "hw4"
 output: html_document
 ---
+```{r setup, include = F}
+knitr::opts_chunk$set(cache = T)
+```
 
-```{r warning = FALSE, eval = FALSE}
+```{r warning = FALSE, message = FALSE}
 library(sparklyr)
 library(ggplot2)
 library(dplyr)
@@ -106,10 +109,10 @@ airports <- airports_tbl %>%
 ```
 
 ```{r}
-busiest_route <- flight_data %>% select(year, origin, dest) %>%
-  filter(year == 1987) %>%
+busiest_route <- flight_data %>% 
+  select(year, origin, dest) %>%
   group_by(origin, dest) %>%
-  summarize(n = count()) %>%
+  summarize(n = n()) %>%
   collect()
 
 ```
@@ -120,13 +123,13 @@ busiest_route <- busiest_route %>%
   head(10) %>% ungroup() %>%
   mutate(rank = seq(1:10)) 
 
-origin_coords <- airports_tbl %>% 
+origin_coords <- airports %>% 
   select(lat, lon, faa) %>% 
   filter(faa %in% busiest_route$origin) %>%
   rename(origin = faa) %>%
   collect() 
 
-dest_coords <- airports_tbl %>%
+dest_coords <- airports %>%
   select(lat, lon, faa) %>% 
   filter(faa %in% busiest_route$dest) %>%
   rename(dest = faa, lat_dest = lat, lon_dest = lon) %>%
@@ -143,15 +146,15 @@ busiest_route2 <- busiest_route2 %>%
 ```
 
 ```{r}
-airports<-sort(unique(c(busiest_route2$origin,
+airports_n<-sort(unique(c(busiest_route2$origin,
                         busiest_route2$dest)))
 
-lat_lon <- airports_tbl %>% select(faa, lat, lon) %>%
-  filter(faa %in% airports) %>% 
+lat_lon <- airports %>% select(faa, lat, lon) %>%
+  filter(faa %in% airports_n) %>% 
   collect() %>% arrange(faa)
 
-airports <- data.frame(airport = airports, lat_lon[,2:3])
-airports <- airports %>% mutate(lat = as.numeric(lat), 
+airports_1 <- data.frame(airport = airports_n, lat_lon[,2:3])
+airports_1 <- airports_1 %>% mutate(lat = as.numeric(lat), 
                                 lon = as.numeric(lon))
 
 ```
@@ -163,9 +166,9 @@ ggplot() + usamap + geom_curve(data = busiest_route2,
              aes(x = lon, y = lat, 
                  xend = lon_dest, yend = lat_dest),
              col = "#b29e7d") + 
-          geom_point(data = airports,
+          geom_point(data = airports_1,
                      aes(x = lon, y = lat)) + 
-          geom_text_repel(data=airports, 
+          geom_text_repel(data=airports_1, 
                   aes(x = lon, y = lat, label = airport), 
                   col = "black", size = 2, 
                   segment.color = NA)
@@ -175,12 +178,12 @@ ggplot() + usamap + geom_curve(data = busiest_route2,
 ###a. Reproduce above plot. Visualize and explain some prominent features you observe. For example, what happened at points 1-5?
 
 ```{r}
-air_traf <- flights_tbl %>%
+air_traf <- all %>%
   select(year, month, dayofmonth, origin, dest) %>%
   filter(year >= 1998) %>%
   filter(origin == 'LAX'|dest == 'LAX') %>%
   group_by(year, month, dayofmonth) %>%
-  summarize(cnt= count()) %>%
+  summarize(cnt= n()) %>%
   collect()
 
 air_traf
@@ -193,17 +196,29 @@ air_traf <- air_traf %>%
                                          dayofmonth, 
                                          sep = '-')),
          '%Y-%m-%d'))
+  
+important <- data.frame(
+  events <- c("2001-09-11", "2004-11-24", "2004-07-04", 
+              "2008-01-01", "2001-01-01"),
+  n <- c(1100, 1000, 1050, 1200, 1200), 
+  num <- c(1, 2, 3, 4, 5),
+  stringAsFactors <- FALSE)
+
 ```
 
 ```{r}
 ggplot(data = air_traf) + 
   geom_line(mapping = aes(x = fin_date, y = cnt)) + 
+  geom_label(data = important, aes(x = as.Date(events, 
+                                                 "%Y-%m-%d"), y = n,
+                                     label = num)) + 
   labs(x = 'date',
       y = 'n', 
-      title = 'LAX air traffic'
-  )
-  
+      title = 'LAX air traffic') 
+ 
 ```
+
+Point 1 was 9/11-- less people were flying because they were afraid to do so. Point 2 was Thanksigiving; Point 3 was Fourth of July which is there were sudden changes in flight count. This is seen across other Thanksigiving and Fourth of July holidays. At point 4, there was a drop in flights because it was amidst the Great Recession. Point 5 was New Year and there was a great expansion in LAX which explains a drop in flight count. 
 
 ###b. Visualize and explain seasonal effects.
 ```{r}
@@ -228,7 +243,7 @@ ggplot(data = air_traf) +
 
 ```
 
-I added a 'season' variable that was broken up into Fall, Spring, Summer, and Winter. 
+I added a 'season' variable that was broken up into Fall, Spring, Summer, and Winter. Seasonal effects are more efficiently understood by the repeated boxplot graphs pictured above. We see that the median number of flights coming in and out of LA is the smallest in the fall. The fall also has the most variability. Summer has the highest median number of flights coming in and out of LA which would make sense since adolescents and college students are off for the entire summer making it a good time to travel; many people are off work as well. Winter and spring have the lower median number of flights. The amount of variability in the number of flights is similar between spring, winter, and summer. The frequency polygons demonstrate similar effects. 
 
 ###c. Visualize and explain weekly effects.
 ```{r}
@@ -242,6 +257,8 @@ ggplot(data = air_traf) +
        title = 'Air Traffic by Week of the Year') + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
+
+I also did repeated boxplots for this graph as well. We see that the median number of flights coming in and out of LAX is lower at the end of the year from weeks 39 to 53. In particular, we see a sudden dip during Week 47-- Thanksgiving Week. This might explain the large variability in Week 47 as well because a lot of people are flying out during the first half of the week but very people are flying out during the actual Thanksgiving weekend. We also see peaks during the summer particularly start from Week 29 (approximately end July) to Week 33 (mid August). 
 
 ###d. Map top 10 destinations from LAX. Size of dots should reflect the number of flights from LAX to that destination. 
 
@@ -262,7 +279,7 @@ top10_lax <- top10_lax %>% arrange(desc(cnt))
 ```{r}
 flight_coords <- airports %>%
   select(faa, lat, lon) %>%
-  filter(faa %in% top10$dest) %>%
+  filter(faa %in% top10_lax$dest) %>%
   rename(dest = faa) %>%
   collect()
 
@@ -334,5 +351,89 @@ ggplot() + usamap2 + geom_curve(data = top10_lax,
          
 
  
+```
+
+##4. Build a predictive model for the arrival delay (arrdelay) of flights flying from LAX. Use the same filtering criteria as in the lecture notes to construct training and validation sets. You are allowed to use a maximum of 5 predictors. The prediction performance of your model on the validation data set will be an important factor for grading this question.
+
+
+```{r eval = FALSE}
+ model_data <- flights_tbl %>%
+    filter(!is.na(arrdelay) & !is.na(depdelay) & !is.na(distance)) %>%
+    filter(depdelay > 15 & depdelay < 240) %>%
+    filter(arrdelay > -60 & arrdelay < 360) %>%
+    filter(year >= 2003 & year <= 2007) %>%
+    left_join(airlines_tbl, by = c("uniquecarrier" = "code")) %>%
+    select(year, month, arrdelay, depdelay, distance, uniquecarrier, description, diverted)
+```
+
+```{r eval = FALSE}
+model_partition <- model_data %>% 
+  sdf_partition(train = 0.8, valid = 0.2, seed = 5555)
+```
+
+```{r eval = FALSE}
+ml1 <- model_partition$train %>%
+    ml_linear_regression(arrdelay ~ distance + depdelay + uniquecarrier + diverted)
+```
+
+```{r eval = FALSE}
+summary(ml1)
+```
+
+```{r eval = FALSE}
+model_deciles <- lapply(model_partition, function(x) {
+    sdf_predict(ml1, x) %>%
+      mutate(decile = ntile(desc(prediction), 10)) %>%
+      group_by(decile) %>%
+      summarize(arrdelay = mean(arrdelay)) %>%
+      select(decile, arrdelay) %>%
+      collect()})
+
+head(model_deciles)
+
+```
+
+```{r eval = FALSE}
+deciles <- rbind(
+  data.frame(data = 'train', model_deciles$train),
+  data.frame(data = 'valid', model_deciles$valid),
+  make.row.names = FALSE
+)
+
+deciles %>%
+  ggplot(aes(factor(decile), arrdelay, fill = data)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(title = 'Average arrdelay by predicted decile', x = 'Decile', y = 'Minutes')
+```
+
+```{r eval = FALSE}
+data_2008 <- flights_tbl %>%
+  filter(!is.na(arrdelay) & !is.na(depdelay) & !is.na(distance)) %>%
+  filter(depdelay > 15 & depdelay < 240) %>%
+  filter(arrdelay > -60 & arrdelay < 360) %>%
+  filter(year == 2008) %>%
+  left_join(airlines_tbl, by = c("uniquecarrier" = "code")) %>%
+  select(year, month, arrdelay, depdelay, distance, uniquecarrier, description, origin, dest)
+```
+
+```{r eval = FALSE}
+carrier <- sdf_predict(ml1, data_2008) %>%
+  group_by(description) %>%
+  summarize(arrdelay = mean(arrdelay), prediction = mean(prediction), freq = n()) %>%
+  filter(freq > 10000) %>%
+  collect()
+```
+
+```{r eval = FALSE}
+ggplot(carrier, aes(arrdelay, prediction)) + 
+  geom_point(alpha = 0.75, color = 'red', shape = 3) +
+  geom_abline(intercept = 0, slope = 1, alpha = 0.15, color = 'blue') +
+  geom_text(aes(label = substr(description, 1, 20)), size = 3, alpha = 0.75, vjust = -1) +
+  labs(title='Average Arrdelay Forecast', x = 'Actual', y = 'Predicted')
+```
+
+##5. Visualize and explain any other information you want to explore.
+
+```{r}
 ```
 
