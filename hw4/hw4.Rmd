@@ -16,7 +16,7 @@ library(ggrepel)
 ```
 
 ```{r}
-Sys.setenv(SPARK_HOME="/usr/lib/spark")
+Sys.setenv(SPARK_HOME = "/usr/lib/spark")
 config <- spark_config()
 sc <- spark_connect(master = "yarn-client", config = config)
 sc
@@ -159,7 +159,7 @@ busiest_route2 <- busiest_route2 %>%
 ```
 
 ```{r}
-airports_n<-sort(unique(c(busiest_route2$origin,
+airports_n <- sort(unique(c(busiest_route2$origin,
                         busiest_route2$dest)))
 
 lat_lon <- airports %>% select(faa, lat, lon) %>%
@@ -181,7 +181,7 @@ ggplot() + usamap + geom_curve(data = busiest_route2,
              col = "#b29e7d") + 
           geom_point(data = airports_1,
                      aes(x = lon, y = lat)) + 
-          geom_text_repel(data=airports_1, 
+          geom_text_repel(data = airports_1, 
                   aes(x = lon, y = lat, label = airport), 
                   col = "black", size = 2, 
                   segment.color = NA)
@@ -276,7 +276,7 @@ air_traf <- air_traf %>%
   mutate(wknum = strftime(fin_date, format = '%V'))
 
 ggplot(data = air_traf) + 
-  geom_boxplot(mapping=aes(x = wknum, y = cnt)) + 
+  geom_boxplot(mapping = aes(x = wknum, y = cnt)) + 
   labs(x = 'Week Number', 
        y = 'n', 
        title = 'Air Traffic by Week of the Year') + 
@@ -336,7 +336,7 @@ top10_lax <- top10_lax %>%
 ```
 
 ```{r}
-airports_2<-sort(unique(c(top10_lax$origin,
+airports_2 <- sort(unique(c(top10_lax$origin,
                         top10_lax$dest)))
 
 lat_lon <- airports %>% select(faa, lat, lon) %>%
@@ -370,7 +370,7 @@ ggplot() + usamap2 + geom_curve(data = top10_lax,
              col = "#b29e7d") + 
           geom_point(data = airports_2,
                      aes(x = lon, y = lat, size = factor(rank))) + 
-          geom_text_repel(data=airports_2, 
+          geom_text_repel(data = airports_2, 
                   aes(x = lon, y = lat, label = airport), 
                   col = "black", size = 2, 
                   segment.color = NA) 
@@ -434,7 +434,7 @@ ggplot(carrier, aes(arrdelay, prediction)) +
   geom_point(alpha = 0.75, color = 'red', shape = 3) +
   geom_abline(intercept = 0, slope = 1, alpha = 0.15, color = 'blue') +
   geom_text(aes(label = substr(description, 1, 20)), size = 3, alpha = 0.75, vjust = -1) +
-  labs(title='Average Arrdelay Forecast', x = 'Actual', y = 'Predicted')
+  labs(title = 'Average Arrdelay Forecast', x = 'Actual', y = 'Predicted')
 ```
 
 
