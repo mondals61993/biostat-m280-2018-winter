@@ -1,0 +1,8 @@
+base
+sparklyr
+ggplot2
+dplyr
+maps
+mapdata
+ggrepel
+bindrcpp
